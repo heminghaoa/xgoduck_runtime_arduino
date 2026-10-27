@@ -54,9 +54,11 @@ These are separate actions and apply to **all connected servos**. No scan or ID 
 ## Calibration
 
 1. Open **Calibration**. All servos unload automatically.
-2. Turn one joint by hand to its mechanical center, then click **Set center & hold** for that joint. It holds its center while the others stay unloaded.
+2. Turn one joint by hand until it matches its zero-pose picture, then click **Set center & hold** for that joint. It holds its center while the others stay unloaded. Click a picture for a close-up and a description.
 3. Repeat for every joint.
 4. Click **Unload all** to release the joints for another adjustment, or **Exit** to return to Control. Exiting unloads the servos.
+
+The pictures show every joint at 0°, rendered from the [xgoduck_rl](https://github.com/LuwuDynamics/xgoduck_rl) training model. Teal is the part the servo turns, the ring marks its shaft, and the dashed line leads to the next shaft. To regenerate them on a desktop machine with `mujoco`, `numpy` and `pillow` installed, run `python tools/render-zero-refs.py <xgoduck_rl>/src/mjlab_microduck/robot/xgoduck/scene_walk.xml assets/zero`.
 
 ## Control
 
@@ -120,4 +122,4 @@ Release a slider to apply its value. Restarting the app restores defaults. Get-u
 
 ## Project files
 
-`assets/` contains the web interface, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers.
+`assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.

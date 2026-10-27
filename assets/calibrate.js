@@ -11,12 +11,45 @@ async function post(path, body={}){
 }
 function showError(e){$('message').textContent=e.message||String(e);}
 
+// Zero-pose pictures come from tools/render-zero-refs.py. The mouth is not in the training model.
+const REF={
+  10:['Left hip yaw','Seen from below. The foot points straight ahead; the hip-roll shaft sits directly in front of this one.'],
+  11:['Left hip roll','Seen from the front. The leg hangs straight down; the hip-pitch shaft is level with this one.'],
+  12:['Left hip pitch','Seen from the left. The knee shaft sits behind and below this one, about 32° under horizontal.'],
+  13:['Left knee','Seen from the left. The ankle shaft is directly below this one: the shank is vertical.'],
+  14:['Left ankle','Seen from the left. The sole is flat on the ground.'],
+  20:['Right hip yaw','Seen from below. The foot points straight ahead; the hip-roll shaft sits directly in front of this one.'],
+  21:['Right hip roll','Seen from the front. The leg hangs straight down; the hip-pitch shaft is level with this one.'],
+  22:['Right hip pitch','Seen from the right. The knee shaft sits behind and below this one, about 32° under horizontal.'],
+  23:['Right knee','Seen from the right. The ankle shaft is directly below this one: the shank is vertical.'],
+  24:['Right ankle','Seen from the right. The sole is flat on the ground.'],
+  30:['Neck pitch','Seen from the left. The neck is vertical: the head-pitch shaft is directly above this one.'],
+  31:['Head pitch','Seen from the left. The head-yaw shaft is directly above this one.'],
+  32:['Head yaw','Seen from above. The head faces straight ahead.'],
+  33:['Head roll','Seen from the front. The head is level from side to side.'],
+  34:['Mouth','Not in the training model. Center it with the beak closed: walking holds 0° and Pick opens it to 30°.']
+};
+
 MOTORS.forEach((id,i)=>{
+  const pic=id===34?'Beak closed':`<img src="zero/joint-${id}.webp" alt="">`;
   $('joints').insertAdjacentHTML('beforeend',`<div class="cal-row" id="row${i}">
-    <div class="cal-meta"><b>ID ${id}</b><span id="raw${i}">Waiting for feedback</span></div>
+    <button class="cal-ref" data-ref="${id}" aria-label="Zero pose of ID ${id}">${pic}</button>
+    <div class="cal-meta"><b>ID ${id}</b><em>${REF[id][0]}</em><span id="raw${i}">Waiting for feedback</span></div>
     <div class="cal-actions"><span id="state${i}">Unloaded</span><button data-center="${i}" disabled>Set center &amp; hold</button></div>
   </div>`);
 });
+
+document.querySelectorAll('[data-ref]').forEach(btn=>{
+  btn.onclick=()=>{
+    const id=+btn.dataset.ref, img=$('ref-img');
+    img.hidden=id===34;
+    if(id!==34)img.src=`zero/joint-${id}.webp`;
+    $('ref-title').textContent=`ID ${id} · ${REF[id][0]}`;
+    $('ref-text').textContent=REF[id][1];
+    $('ref').showModal();
+  };
+});
+$('ref').onclick=e=>{if(e.target===$('ref'))$('ref').close();};
 
 function refreshRows(){
   document.querySelectorAll('[data-center]').forEach(btn=>{
