@@ -56,7 +56,7 @@ class Identity:
             raise PermissionError('the sticker was already claimed')
         import segno
         qr = segno.make(self.pairing_uri(), error='m', micro=False)
-        return dict(id=self.id, svg=qr.svg_inline(border=2, omitsize=True))
+        return dict(id=self.id, uri=self.pairing_uri(), svg=qr.svg_inline(border=2, omitsize=True))
 
     def claim(self):
         with self.lock:

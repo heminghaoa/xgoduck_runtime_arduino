@@ -117,11 +117,12 @@ window.addEventListener('blur',()=>zero());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)zero();});
 window.addEventListener('pagehide',()=>{
   zero(false);
-  navigator.sendBeacon('/api/command',new Blob([JSON.stringify({twist:[0,0,0]})],{type:'application/json'}));
+  xgoBeacon('/api/command',{twist:[0,0,0]});
 });
 setInterval(()=>{if(!document.hidden&&!commandBusy)sendCommand();},50);
 setInterval(async()=>{if(statusBusy||document.hidden)return;statusBusy=true;try{const r=await fetch('/api/status');if(!r.ok)throw new Error('status read failed');const s=await r.json();const modeLabel={shadow:'inference only',off:'torque off',hold:'default pose',policy:'walk',calibrate:'calibrate',servo_debug:'servo setup'};$('rx').textContent=s.feedback_hz.toFixed(1)+' Hz';$('rl').textContent=s.inference_hz.toFixed(1)+' Hz';$('servos').textContent=(s.servo_ids?.length||0)+'/15';$('imu').textContent=s.imu_ok?'online':'offline';$('mode').textContent=(modeLabel[s.mode]||s.mode)+(s.enabled?' · enabled':' · torque off');$('message').textContent=s.last_error||s.settings_error||`Bridge ${(s.bridge_baud/1e6).toFixed(0)} Mbps · state age ${(s.feedback_age_ms||0).toFixed(1)} ms`;
 showBattery(s.battery);
+$('pairing-warning').hidden=!(s.access&&s.access.require_pairing&&!s.access.paired);
 document.querySelectorAll('[data-mode="hold"],[data-mode="policy"]').forEach(b=>b.disabled=!s.control_ready);
 if(s.roller&&!rollerBusy)showRoller(s.roller.enabled);
 if(!rollerBusy)showActionSettings(s.deployment);

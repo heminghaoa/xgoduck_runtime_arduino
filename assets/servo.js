@@ -184,7 +184,7 @@ $('disable-protection').onclick=()=>sendProtection('set_protection',false);
 $('set-protection-current').onclick=()=>sendProtection('set_protection_current');
 window.addEventListener('pagehide',()=>{
   stopScan();
-  navigator.sendBeacon('/api/servo/exit',new Blob(['{}'],{type:'application/json'}));
+  xgoBeacon('/api/servo/exit',{});
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(active||scanTask))exit();});
 

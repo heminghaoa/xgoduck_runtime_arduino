@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pairing · XGO Duck</title><link rel="stylesheet" href="style.css?v=20261028-2">
+<title>Pairing · XGO Duck</title><link rel="stylesheet" href="style.css?v=20261028-3">
 <main class="page-pair">
 <header>
   <div><small>ARDUINO UNO Q</small><h1>Pairing</h1></div>
@@ -22,6 +22,22 @@
     <p class="hint">Lost the sticker? Delete <code>data/identity.json</code> in the app folder on the board and restart the app. The duck gets a new ID and sticker, and the old sticker stops working.</p>
   </div>
 </section>
+<section>
+  <h2>Access <span id="access-state">—</span></h2>
+  <label class="mode-toggle"><input id="require" type="checkbox" role="switch" disabled>Require pairing on this network</label>
+  <p class="hint">When this is on, only paired phones and browsers can move the duck or change its settings; everyone else can still see its status. Turning it on needs this browser to be paired first. If you get locked out, delete <code>data/access.json</code> on the board and restart the app.</p>
+  <h3>This browser <span id="you">—</span></h3>
+  <div class="pair-form" id="pair-form">
+    <label>Pairing link or key<input id="secret" autocomplete="off" spellcheck="false" placeholder="xgoduck://pair?id=…&amp;k=…"></label>
+    <label>Name<input id="client-name" value="Browser" maxlength="32"></label>
+    <button id="pair">Pair this browser</button>
+  </div>
+  <button id="unpair" hidden>Unpair this browser</button>
+  <p class="hint">Before the sticker is saved, Pair this browser works with the field empty. Afterwards, scan the sticker with the phone camera and paste the link it shows. Pairing is per address: opening the page at a new address needs pairing again.</p>
+  <h3>Paired phones and browsers</h3>
+  <ul class="paired" id="paired"></ul>
+</section>
 </main>
-<script src="pair.js?v=20261028"></script>
+<script src="auth.js?v=20261028"></script>
+<script src="pair.js?v=20261028-2"></script>
 </html>

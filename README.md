@@ -106,6 +106,17 @@ On first start the duck creates its own 8-character ID and a pairing key, stored
 
 Until step 3 anyone on the same network can open the page, so do it right after printing. If the sticker is lost, delete `data/identity.json` on the board and restart the app: the duck gets a new ID and sticker, and the old sticker stops working. A damaged identity file is reported on the page instead of being replaced.
 
+### Requiring pairing
+
+By default anyone on the same network can control the duck. To allow only paired phones and browsers:
+
+1. On **Pairing**, click **Pair this browser**. Before the sticker is saved the field can stay empty; afterwards, scan the sticker with a phone camera and paste the link it shows.
+2. Turn on **Require pairing on this network**.
+
+Other browsers can then still watch the Control page but not move the duck or change settings; they see a reminder to pair. **Paired phones and browsers** lists every paired client, and **Remove** revokes one. A browser stays paired only at the address it used, so opening the page at a new address needs pairing again. If you get locked out, delete `data/access.json` on the board and restart the app.
+
+Pairing never sends the key: the browser answers a one-time challenge with an HMAC of it and receives a token, and the duck keeps only the token's hash. The page is plain HTTP, so anyone able to watch your network traffic could copy a token; use pairing on networks you trust.
+
 ## Roller walking
 
 Use this mode with the roller-equipped robot.
@@ -152,4 +163,4 @@ Release a slider to apply its value. The duck saves both groups and the IMU filt
 
 ## Project files
 
-`data/` holds this duck's saved settings, ID and pairing key and is not committed. `assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
+`data/` holds this duck's saved settings, ID, pairing key and paired clients and is not committed. `assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
