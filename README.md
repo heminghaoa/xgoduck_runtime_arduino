@@ -96,6 +96,12 @@ Leaving the Control page stops travel but keeps motor torque enabled. Use **Torq
 
 The voltage dips while the servos work, so the level reads lower during walking than at rest. **No servo reading** means no servo answered: check that the power switch is on.
 
+## 3D view
+
+**3D** shows the duck from the training model, posed live from the servo feedback ten times a second and tilted by the IMU. Drag to rotate, scroll or pinch to zoom. **Add-on parts** shows where the planned USB camera, hub, sound card and speaker go, with the head see-through. Without feedback the duck stands in its default pose; the mouth is not modelled.
+
+The model lives in `assets/model/`. To regenerate it on a desktop machine with `mujoco` and `numpy` installed, run `python tools/export-3d-model.py <xgoduck_rl>/src/mjlab_microduck/robot/xgoduck/scene_walk.xml assets/model`. The page uses [three.js](https://threejs.org/) 0.170.0 (MIT), included in `assets/libs/three/` so it works without internet.
+
 ## Pairing sticker
 
 On first start the duck creates its own 8-character ID and a pairing key, stored in `data/identity.json`. The **Pairing** page shows them as a QR code for a sticker that a planned phone app will scan to pair with this duck.
@@ -175,4 +181,4 @@ Release a slider to apply its value. The duck saves both groups and the IMU filt
 
 ## Project files
 
-`data/` holds this duck's saved settings, ID, pairing key and paired clients and is not committed. `assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
+`data/` holds this duck's saved settings, ID, pairing key and paired clients and is not committed. `assets/` contains the web interface, `assets/zero/` its calibration pictures, `assets/model/` the 3D model and `assets/libs/` bundled libraries, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
