@@ -8,10 +8,12 @@ from fastapi import HTTPException
 from arduino.app_utils import App, Bridge
 from arduino.app_bricks.web_ui import WebUI
 from controller import Controller
+from identity import Identity
 
 # Bound GIL handoff latency between the 100 Hz receiver, policy and WebUI.
 sys.setswitchinterval(0.001)
 controller = Controller(Bridge)
+duck = Identity()
 ui = WebUI(port=9527, cors_origins='')
 Bridge.provide('duck_state', controller.receive)
 Bridge.provide('duck_boot_pd', controller.receive_boot_pd)
@@ -77,6 +79,15 @@ def update_settings(body: dict):
 def reset_settings(_body: dict = None):
     return controller.reset_settings()
 
+def identity_sticker():
+    try: return duck.sticker()
+    except PermissionError as exc: raise HTTPException(403, str(exc))
+    except (ImportError, ValueError) as exc: raise HTTPException(503, str(exc))
+
+def identity_claim(_body: dict = None):
+    try: return duck.claim()
+    except (OSError, ValueError) as exc: raise HTTPException(503, str(exc))
+
 def servo_enter(_body: dict = None):
     try: return controller.set_mode('servo_debug')
     except ValueError as exc: raise HTTPException(400, str(exc))
@@ -104,6 +115,9 @@ ui.expose_api('POST', '/api/action-scale', action_scale)
 ui.expose_api('GET', '/api/settings', controller.get_settings)
 ui.expose_api('POST', '/api/settings', update_settings)
 ui.expose_api('POST', '/api/settings/reset', reset_settings)
+ui.expose_api('GET', '/api/identity', duck.public)
+ui.expose_api('GET', '/api/identity/sticker', identity_sticker)
+ui.expose_api('POST', '/api/identity/claim', identity_claim)
 ui.expose_api('POST', '/api/pick', pick)
 ui.expose_api('POST', '/api/roulade', roulade)
 ui.expose_api('POST', '/api/cal/enter', cal_enter)

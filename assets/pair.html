@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pairing · XGO Duck</title><link rel="stylesheet" href="style.css?v=20261028-2">
+<main class="page-pair">
+<header>
+  <div><small>ARDUINO UNO Q</small><h1>Pairing</h1></div>
+  <div class="header-actions">
+    <nav class="nav"><a href="/">Control</a><a href="/calibrate.html">Calibration</a><a href="/servo.html">Servo setup</a><a href="/pair.html" aria-current="page">Pairing</a></nav>
+  </div>
+</header>
+<p id="message" role="status">Loading…</p>
+<section>
+  <h2>Duck ID <span id="duck-id">—</span></h2>
+  <div id="unclaimed" hidden>
+    <figure class="sticker" id="sticker"><div id="qr"></div><figcaption><b>XGO Duck</b><span id="sticker-id"></span></figcaption></figure>
+    <div class="buttons"><button id="print">Print sticker</button><button id="claim">I have saved the sticker</button></div>
+    <p class="hint">The QR code holds this duck's ID and pairing key; the phone app will scan it to pair. Print sticker prints it 30 mm wide. Stick it under the duck or on the battery bracket.</p>
+    <p class="hint">Anyone on this network can open this page until you press I have saved the sticker. After that the duck never shows its pairing key over the network again.</p>
+  </div>
+  <div id="claimed" hidden>
+    <p>The sticker is saved. The duck no longer shows its pairing key over the network.</p>
+    <p class="hint">Lost the sticker? Delete <code>data/identity.json</code> in the app folder on the board and restart the app. The duck gets a new ID and sticker, and the old sticker stops working.</p>
+  </div>
+</section>
+</main>
+<script src="pair.js?v=20261028"></script>
+</html>

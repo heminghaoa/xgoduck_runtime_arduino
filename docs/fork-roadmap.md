@@ -41,8 +41,8 @@ iPhone App（SwiftUI）
 App 和连接服务都要依赖这些功能，网页调试页也能直接受益。
 
 - [ ] **1.1 配置保存**：动作幅度、平滑、IMU 滤波、鸭子名字写进 `data/settings.json`，开机自动恢复。接口为 `GET /api/settings`、`POST /api/settings`（只改传入的字段）和 `POST /api/settings/reset`。代码已写好（分支 `feat/config-persistence`），**待上板验证**。
-- [ ] **1.2 设备身份**：首次启动时生成鸭子编号和配对密钥，保存在板子上。
-- [ ] **1.3 贴纸二维码**：工具脚本根据编号和密钥生成可以打印的二维码贴纸，内容格式为 `xgoduck://pair?id=<编号>&k=<密钥>&v=1`。
+- [ ] **1.2 设备身份**：首次启动时生成 8 位编号和 128 位配对密钥，保存在 `data/identity.json`（权限 600）。文件损坏时报错，不会悄悄重新生成，以免已打印的贴纸作废。`GET /api/identity` 只返回编号，不返回密钥。代码已写好，**待上板验证**。
+- [ ] **1.3 贴纸二维码**：网页新增 Pairing 页，显示二维码并可以按 30mm 宽打印，内容格式为 `xgoduck://pair?id=<编号>&k=<密钥>&v=1`。点"I have saved the sticker"后（认领），鸭子不再通过网络显示密钥。弄丢贴纸时，删除 `data/identity.json` 重新生成。二维码由 Python 库 segno 生成，已加进 `requirements.txt`。代码已写好，**待上板验证**。以后可以考虑改成 https 通用链接，这样没装 App 的人扫码也能看到说明页。
 - [ ] **1.4 访问令牌**：用配对密钥换取令牌，控制接口必须带令牌才能调用。网页调试页保留免密模式，可以在配置里关闭。
 - [ ] **1.5 实时通道**：新增 WebSocket（或者 WebUI brick 自带的实时消息），以 10 Hz 推送状态并接收遥控指令，替代 App 的轮询。网页继续用现有的 REST 接口。
 
@@ -87,6 +87,7 @@ App 和连接服务都要依赖这些功能，网页调试页也能直接受益�
 
 - [ ] 1910 舵机电压寄存器 0x3E 的读数和万用表实测是否一致
 - [ ] App Lab 里的 Python 能写入哪个目录，并且重启和重新部署后不会丢（1.1、1.2 需要）
+- [ ] App Lab 会不会按 `requirements.txt` 自动安装新加的 segno（1.3 需要）
 - [ ] 板子上是否有 BlueZ（`bluetoothctl`）、NetworkManager（`nmcli`）和 avahi
 - [ ] 板子外的服务能否访问 `127.0.0.1:9527`
 - [ ] 板子上是否有技适标志

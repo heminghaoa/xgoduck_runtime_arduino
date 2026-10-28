@@ -54,9 +54,14 @@ def load():
         return None, 'settings not loaded: unknown file version'
     return data, ''
 
-def save(values):
+def write_json(path, data, mode=0o644):
+    """Replace path atomically, so a power cut never leaves half a file."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    tmp = SETTINGS_FILE.with_suffix('.tmp')
-    tmp.write_text(json.dumps({'version': VERSION, **values}, ensure_ascii=False, indent=2),
-                   encoding='utf-8')
-    os.replace(tmp, SETTINGS_FILE)
+    tmp = path.with_suffix('.tmp')
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+
+def save(values):
+    write_json(SETTINGS_FILE, {'version': VERSION, **values})

@@ -96,6 +96,16 @@ Leaving the Control page stops travel but keeps motor torque enabled. Use **Torq
 
 The voltage dips while the servos work, so the level reads lower during walking than at rest. **No servo reading** means no servo answered: check that the power switch is on.
 
+## Pairing sticker
+
+On first start the duck creates its own 8-character ID and a pairing key, stored in `data/identity.json`. The **Pairing** page shows them as a QR code for a sticker that a planned phone app will scan to pair with this duck.
+
+1. Open **Pairing** and click **Print sticker**. It prints 30 mm wide.
+2. Stick it under the duck or on the battery bracket.
+3. Click **I have saved the sticker**. From then on the duck never shows its pairing key over the network.
+
+Until step 3 anyone on the same network can open the page, so do it right after printing. If the sticker is lost, delete `data/identity.json` on the board and restart the app: the duck gets a new ID and sticker, and the old sticker stops working. A damaged identity file is reported on the page instead of being replaced.
+
 ## Roller walking
 
 Use this mode with the roller-equipped robot.
@@ -142,4 +152,4 @@ Release a slider to apply its value. The duck saves both groups and the IMU filt
 
 ## Project files
 
-`data/` holds this duck's saved settings and is not committed. `assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
+`data/` holds this duck's saved settings, ID and pairing key and is not committed. `assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
