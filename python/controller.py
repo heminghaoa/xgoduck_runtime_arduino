@@ -6,7 +6,9 @@ import time
 from policy import Policy
 from recovery import Recovery
 from proc import SignalFilter
-from rl_core import MOTOR_IDS, IMU_BIAS_DEG, MOUTH_INDEX, MOUTH_MAX_DEG
+from rl_core import (MOTOR_IDS, IMU_BIAS_DEG, MOUTH_INDEX, MOUTH_MAX_DEG,
+                     ACTION_SCALE, ACTION_ALPHA, ACTION_ALPHA_HEAD, GYRO_ALPHA, GRAVITY_TAU)
+import settings
 from wire import *
 
 EXCLUSIVE_MODES = ('calibrate', 'servo_debug')
@@ -24,6 +26,17 @@ BATTERY_VALID_V = (4.0, 9.5)
 # Rough resting charge curve: pack volts -> percent.
 BATTERY_CURVE = ((6.6, 0), (7.0, 10), (7.3, 20), (7.45, 30), (7.55, 40), (7.65, 50),
                  (7.75, 60), (7.85, 70), (8.0, 80), (8.15, 90), (8.3, 100))
+
+ROLLER_ACTION_SCALE, ROLLER_ALPHA, ROLLER_ALPHA_HEAD = 0.7, 0.4, 0.5
+DEFAULT_NAME = 'XGO Duck'
+
+def default_settings():
+    return dict(name=DEFAULT_NAME,
+                walk=dict(action_scale=ACTION_SCALE, action_alpha=ACTION_ALPHA,
+                          action_alpha_head=ACTION_ALPHA_HEAD),
+                roller=dict(action_scale=ROLLER_ACTION_SCALE, action_alpha=ROLLER_ALPHA,
+                            action_alpha_head=ROLLER_ALPHA_HEAD),
+                imu=dict(gyro_alpha=GYRO_ALPHA, gravity_tau_s=GRAVITY_TAU))
 
 def battery_percent(volts):
     if volts <= BATTERY_CURVE[0][0]:
@@ -50,8 +63,8 @@ class Controller:
         ok, message = self.roller_policy.load('xgoduck_roller.onnx', use_model_home=True)
         if not ok:
             raise RuntimeError(message)
-        self.roller_policy.action_scale = 0.7
-        self.roller_policy.set_action_alphas(leg=0.4, head=0.5)
+        self.roller_policy.action_scale = ROLLER_ACTION_SCALE
+        self.roller_policy.set_action_alphas(leg=ROLLER_ALPHA, head=ROLLER_ALPHA_HEAD)
         self.model_message += '; ' + message
         self.roller_mode = False
         self.getup_policy = Policy()
@@ -108,6 +121,62 @@ class Controller:
         self.battery_samples = collections.deque(maxlen=10)
         self.battery_servo = None
         self.battery_time = 0.0
+        # Serializes saves; taken before self.lock, never inside it.
+        self.settings_lock = threading.RLock()
+        self.name = DEFAULT_NAME
+        saved, self.settings_error = settings.load()
+        try:
+            self._apply_settings_locked(settings.merge(default_settings(), saved or {}))
+        except ValueError as exc:
+            self.settings_error = f'settings not loaded: {exc}'
+
+    def _settings_locked(self):
+        walk, roller = self.walk_policy, self.roller_policy
+        # During a roulade the walk models hold its temporary smoothing.
+        leg, head = self._roulade_alpha or (walk.action_alpha, walk.action_alpha_head)
+        return dict(name=self.name,
+                    walk=dict(action_scale=walk.action_scale, action_alpha=leg, action_alpha_head=head),
+                    roller=dict(action_scale=roller.action_scale, action_alpha=roller.action_alpha,
+                                action_alpha_head=roller.action_alpha_head),
+                    imu=dict(gyro_alpha=self.filter.gyro_alpha, gravity_tau_s=self.filter.gravity_tau_s))
+
+    def _apply_settings_locked(self, values):
+        walk, roller = values['walk'], values['roller']
+        with self.policy_lock:
+            for model in self._standard_models():
+                model.action_scale = walk['action_scale']
+            if self._roulade_alpha is not None:
+                self._roulade_alpha = (walk['action_alpha'], walk['action_alpha_head'])
+            else:
+                self._apply_alphas_locked(walk['action_alpha'], walk['action_alpha_head'])
+            self.roller_policy.action_scale = roller['action_scale']
+            self.roller_policy.set_action_alphas(leg=roller['action_alpha'], head=roller['action_alpha_head'])
+        self.filter.set_imu_filters(**values['imu'])
+        self.name = values['name']
+
+    def _save_settings(self):
+        with self.settings_lock:
+            with self.lock:
+                values = self._settings_locked()
+            try:
+                settings.save(values)
+                self.settings_error = ''
+            except OSError as exc:
+                self.settings_error = f'settings not saved: {exc}'
+
+    def get_settings(self):
+        with self.lock:
+            return dict(self._settings_locked(), file=str(settings.SETTINGS_FILE), error=self.settings_error)
+
+    def update_settings(self, update):
+        with self.settings_lock:
+            with self.lock:
+                self._apply_settings_locked(settings.merge(self._settings_locked(), update))
+            self._save_settings()
+        return self.get_settings()
+
+    def reset_settings(self):
+        return self.update_settings(default_settings())
 
     def receive_power(self, raw):
         try:
@@ -298,18 +367,22 @@ class Controller:
         with self.lock:
             with self.policy_lock:
                 if self.roller_mode:
-                    return self.roller_policy.set_action_alphas(**values)
-                leg, head = self.walk_policy.set_action_alphas(**values)
-                if self._roulade_alpha is not None:
-                    self._roulade_alpha = (leg, head)
-                    self._apply_alphas_locked(ROULADE_ALPHA, ROULADE_ALPHA)
+                    result = self.roller_policy.set_action_alphas(**values)
                 else:
-                    self._apply_alphas_locked(leg, head)
-                return leg, head
+                    leg, head = result = self.walk_policy.set_action_alphas(**values)
+                    if self._roulade_alpha is not None:
+                        self._roulade_alpha = (leg, head)
+                        self._apply_alphas_locked(ROULADE_ALPHA, ROULADE_ALPHA)
+                    else:
+                        self._apply_alphas_locked(leg, head)
+        self._save_settings()
+        return result
 
     def set_imu_filters(self, **values):
         with self.lock:
-            return self.filter.set_imu_filters(**values)
+            result = self.filter.set_imu_filters(**values)
+        self._save_settings()
+        return result
 
     def set_action_scale(self, scale):
         scale = float(scale)
@@ -320,6 +393,7 @@ class Controller:
                 models = (self.roller_policy,) if self.roller_mode else self._standard_models()
                 for model in models:
                     model.action_scale = scale
+        self._save_settings()
         return {'scale': scale}
 
     def _stop_pick_locked(self):
@@ -732,6 +806,7 @@ class Controller:
             result['control_ready']=bool(fb and fb.imu_ok and now-self.rx_time<.15 and self.mode not in EXCLUSIVE_MODES)
             result['servo_scan_version'] = 2
             result['battery'] = self._battery_status_locked(now)
+            result['settings_error'] = self.settings_error
             result['roller'] = dict(enabled=self.roller_mode, model=self.roller_policy.file,
                                     walk_model=self.policy.file, default_deg=self.roller_policy.default_deg,
                                     action_scale=self.roller_policy.action_scale,

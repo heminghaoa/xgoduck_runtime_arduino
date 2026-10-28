@@ -119,7 +119,7 @@ Recovery uses the get-up policy and then returns to roller walking. Turn **Rolle
 
 ## Adjusting the sliders
 
-The Action settings sliders follow the Roller mode switch. Each group keeps its own settings until the app restarts.
+The Action settings sliders follow the Roller mode switch. Each group keeps its own settings.
 
 | Default setting | Ordinary walking / other models | Roller walking |
 | --- | --- | --- |
@@ -131,7 +131,7 @@ The Action settings sliders follow the Roller mode switch. Each group keeps its 
 - Higher **Leg α** or **Head α** gives smoother, slower responses.
 - Under **IMU filtering**, higher **Angular velocity α** gives more smoothing; higher **Gravity projection τ** slows accelerometer correction.
 
-Release a slider to apply its value. Restarting the app restores defaults. Get-up and Pick use the ordinary settings; Roulade keeps its temporary smoothing while it runs.
+Release a slider to apply its value. The duck saves both groups and the IMU filtering in `data/settings.json` in the app folder and restores them when the app starts. **Restore defaults** returns them all to their defaults. Get-up and Pick use the ordinary settings; Roulade keeps its temporary smoothing while it runs.
 
 ## If something is not working
 
@@ -142,4 +142,4 @@ Release a slider to apply its value. Restarting the app restores defaults. Get-u
 
 ## Project files
 
-`assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
+`data/` holds this duck's saved settings and is not committed. `assets/` contains the web interface and `assets/zero/` its calibration pictures, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.

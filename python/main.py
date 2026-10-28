@@ -70,6 +70,13 @@ def cal_center(body: dict):
     try: return controller.cal_center(body['index'])
     except (KeyError, TypeError, ValueError) as exc: raise HTTPException(400, str(exc))
 
+def update_settings(body: dict):
+    try: return controller.update_settings(body)
+    except ValueError as exc: raise HTTPException(400, str(exc))
+
+def reset_settings(_body: dict = None):
+    return controller.reset_settings()
+
 def servo_enter(_body: dict = None):
     try: return controller.set_mode('servo_debug')
     except ValueError as exc: raise HTTPException(400, str(exc))
@@ -94,6 +101,9 @@ ui.expose_api('POST', '/api/command', command)
 ui.expose_api('POST', '/api/filter', filtering)
 ui.expose_api('POST', '/api/imu-filter', imu_filtering)
 ui.expose_api('POST', '/api/action-scale', action_scale)
+ui.expose_api('GET', '/api/settings', controller.get_settings)
+ui.expose_api('POST', '/api/settings', update_settings)
+ui.expose_api('POST', '/api/settings/reset', reset_settings)
 ui.expose_api('POST', '/api/pick', pick)
 ui.expose_api('POST', '/api/roulade', roulade)
 ui.expose_api('POST', '/api/cal/enter', cal_enter)

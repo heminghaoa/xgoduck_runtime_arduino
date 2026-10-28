@@ -10,3 +10,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# per-duck settings and secrets written on the board
+data/
