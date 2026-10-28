@@ -117,6 +117,18 @@ Other browsers can then still watch the Control page but not move the duck or ch
 
 Pairing never sends the key: the browser answers a one-time challenge with an HMAC of it and receives a token, and the duck keeps only the token's hash. The page is plain HTTP, so anyone able to watch your network traffic could copy a token; use pairing on networks you trust.
 
+### Live channel for apps
+
+Apps can connect with Socket.IO to `/socket.io` on the same port instead of polling. The duck pushes `status` ten times a second: mode, readiness, battery, recovery phase and errors. A client sends `hello` with `{"token": …}` once, then:
+
+| Message | Data | Reply |
+| --- | --- | --- |
+| `command` | `{"twist": [vx, vy, ωz], "head": [4 values], "mouth": degrees}`, any subset | `command_response` only on failure |
+| `mode` | `{"mode": "shadow" \| "off" \| "hold" \| "policy"}` | `mode_response` |
+| `action` | `{"name": "pick" \| "roulade"}` | `action_response` |
+
+Commands follow the same limits and timeouts as the web page. When pairing is required, they need a valid token, checked on every message. If a client that was steering disconnects, travel stops at once.
+
 ## Roller walking
 
 Use this mode with the roller-equipped robot.

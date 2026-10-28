@@ -10,6 +10,7 @@ from arduino.app_bricks.web_ui import WebUI
 from access import Access
 from controller import Controller
 from identity import Identity
+from realtime import Realtime
 
 # Bound GIL handoff latency between the 100 Hz receiver, policy and WebUI.
 sys.setswitchinterval(0.001)
@@ -18,6 +19,7 @@ duck = Identity()
 access = Access(duck)
 ui = WebUI(port=9527, cors_origins='')
 access.install(ui.app)
+realtime = Realtime(ui, controller, access, duck)
 Bridge.provide('duck_state', controller.receive)
 Bridge.provide('duck_boot_pd', controller.receive_boot_pd)
 Bridge.provide('duck_raw', controller.receive_raw)
@@ -166,8 +168,10 @@ ui.expose_api('POST', '/api/servo/exit', servo_exit)
 ui.expose_api('POST', '/api/servo', servo_action)
 worker = threading.Thread(target=controller.run, name='policy50', daemon=True)
 worker.start()
+realtime.start()
 try:
     App.run()
 finally:
+    realtime.stop()
     controller.stop()
     worker.join(timeout=2)
