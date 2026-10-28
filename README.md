@@ -8,6 +8,8 @@
 >
 > - **Calibration:** a zero-pose picture for every joint, rendered from the [xgoduck_rl](https://github.com/LuwuDynamics/xgoduck_rl) model (Apache-2.0).
 > - **Battery:** battery voltage and a low-battery reminder on the Control page.
+>
+> Planned work, in Chinese: [docs/fork-roadmap.md](docs/fork-roadmap.md).
 
 Control an XGO Duck from a web browser using Arduino Uno Q. Includes walking, roller walking, get-up, pick, and roulade policies.
 
