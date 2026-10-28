@@ -5,3 +5,8 @@ __pycache__/
 *.pyc
 *.log
 *.bak
+
+# local secrets (API keys, tokens)
+.env
+.env.*
+!.env.example

@@ -1,5 +1,14 @@
 # XGO Duck
 
+> **Unofficial modified fork.** This is a personal fork of [LuwuDynamics/xgoduck_runtime_arduino](https://github.com/LuwuDynamics/xgoduck_runtime_arduino), shared for personal and educational use. It is not affiliated with or endorsed by Luwu Dynamics, Pollen Robotics or Arduino. The upstream code and models remain the work of their authors.
+>
+> Upstream publishes no license file. Its maintainer's [licensing note](https://github.com/LuwuDynamics/xgoduck_hardware/blob/master/LICENSING.md) allows personal and educational replication and asks for separate authorization for commercial use: hello@xgorobot.com.
+>
+> Changes in this fork:
+>
+> - **Calibration:** a zero-pose picture for every joint, rendered from the [xgoduck_rl](https://github.com/LuwuDynamics/xgoduck_rl) model (Apache-2.0).
+> - **Battery:** battery voltage and a low-battery reminder on the Control page.
+
 Control an XGO Duck from a web browser using Arduino Uno Q. Includes walking, roller walking, get-up, pick, and roulade policies.
 
 Based on [Microduck](https://github.com/pollen-robotics/microduck) by [Pollen Robotics](https://pollen-robotics.com/microduck/).
