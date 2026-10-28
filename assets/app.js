@@ -22,6 +22,17 @@ function showRoller(enabled){
   $('left-label').textContent=enabled?'Forward / backward':'Forward / strafe';
   if(changed)zero(false);
 }
+function showBattery(b){
+  const known=b&&b.voltage!=null, warn=$('battery-warning');
+  $('battery').textContent=known?b.voltage.toFixed(1)+' V':'—';
+  $('battery').className=known?b.level:'';
+  $('battery-detail').textContent=known?`about ${b.percent}%`:'No servo reading';
+  warn.hidden=!known||b.level==='ok';
+  warn.classList.toggle('critical',known&&b.level==='critical');
+  if(!warn.hidden)warn.innerHTML=b.level==='critical'
+    ?`<strong>Battery very low:</strong> ${b.voltage.toFixed(1)} V. Turn torque off and charge it now.`
+    :`<strong>Battery low:</strong> ${b.voltage.toFixed(1)} V. Charge it soon.`;
+}
 $('roller-mode').onchange=async()=>{
   if(rollerBusy)return;
   const enabled=$('roller-mode').checked;
@@ -106,6 +117,7 @@ window.addEventListener('pagehide',()=>{
 });
 setInterval(()=>{if(!document.hidden&&!commandBusy)sendCommand();},50);
 setInterval(async()=>{if(statusBusy||document.hidden)return;statusBusy=true;try{const r=await fetch('/api/status');if(!r.ok)throw new Error('status read failed');const s=await r.json();const modeLabel={shadow:'inference only',off:'torque off',hold:'default pose',policy:'walk',calibrate:'calibrate',servo_debug:'servo setup'};$('rx').textContent=s.feedback_hz.toFixed(1)+' Hz';$('rl').textContent=s.inference_hz.toFixed(1)+' Hz';$('servos').textContent=(s.servo_ids?.length||0)+'/15';$('imu').textContent=s.imu_ok?'online':'offline';$('mode').textContent=(modeLabel[s.mode]||s.mode)+(s.enabled?' · enabled':' · torque off');$('message').textContent=s.last_error||`Bridge ${(s.bridge_baud/1e6).toFixed(0)} Mbps · state age ${(s.feedback_age_ms||0).toFixed(1)} ms`;
+showBattery(s.battery);
 document.querySelectorAll('[data-mode="hold"],[data-mode="policy"]').forEach(b=>b.disabled=!s.control_ready);
 if(s.roller&&!rollerBusy)showRoller(s.roller.enabled);
 if(!rollerBusy)showActionSettings(s.deployment);

@@ -18,6 +18,7 @@ Bridge.provide('duck_boot_pd', controller.receive_boot_pd)
 Bridge.provide('duck_raw', controller.receive_raw)
 Bridge.provide('duck_servo_reply', controller.receive_servo_reply)
 Bridge.provide('duck_cal_reply', controller.receive_cal_reply)
+Bridge.provide('duck_power', controller.receive_power)
 
 def mode(body: dict):
     try: return controller.set_mode(body['mode'])

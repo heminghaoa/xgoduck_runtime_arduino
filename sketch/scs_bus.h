@@ -21,6 +21,9 @@ static uint16_t servoReadPos = 0;
 static uint8_t servoParamsId = 0xFF;
 static bool servoParamsSeen = false;
 static uint8_t servoParamKp = 0, servoParamKd = 0;
+static uint8_t servoVoltId = 0xFF;
+static bool servoVoltSeen = false;
+static uint8_t servoVoltRaw = 0;
 
 static int motorIndexById(uint8_t id) {
   for (uint8_t i = 0; i < NUM_MOTORS; i++) {
@@ -271,7 +274,7 @@ static void parseServoRx() {
         break;
       case 3:
         servoRxBuffer[3] = res;
-        if (res == 0x02 || res == 0x04 || res == 0x08 || res == 0x09 || res == 0x0B) {
+        if (res == 0x02 || res == 0x03 || res == 0x04 || res == 0x08 || res == 0x09 || res == 0x0B) {
           servoParserFlag = 4;
           servoRxLen = 0;
           servoRxDataLen = res;
@@ -301,6 +304,14 @@ static void parseServoRx() {
           if (dataLen == 2 && servoPingId <= 253 && sid == servoPingId) {
             // Even a device error is evidence that this address responded.
             servoPingSeen = true;
+            break;
+          }
+          // A one-byte read is only ever the requested voltage.
+          if (dataLen == 3) {
+            if (servoRxBuffer[4] == 0 && servoVoltId <= 253 && sid == servoVoltId) {
+              servoVoltRaw = servoRxBuffer[5];
+              servoVoltSeen = true;
+            }
             break;
           }
           const int idx = motorIndexById(sid);
@@ -377,4 +388,22 @@ static bool readServoGains(uint8_t id, uint8_t &kp, uint8_t &kd) {
   kp = servoParamKp; kd = servoParamKd;
   servoParamsId = 0xFF;
   return servoParamsSeen;
+}
+
+static bool readServoVoltage(uint8_t id, uint8_t &decivolts) {
+  drainServoRx();
+  servoVoltId = id;
+  servoVoltSeen = false;
+  const uint8_t data[2] = {ADDR_PRESENT_VOLTAGE, 1};
+  scsWriteBuf(id, 0x02, data, 2);
+  Serial1.flush();
+  // Stop as soon as it answers: this runs inside the 10 ms control tick.
+  const uint32_t start = micros();
+  while (!servoVoltSeen && (uint32_t)(micros() - start) < VOLTAGE_REPLY_US) {
+    parseServoRx();
+    k_sleep(K_USEC(100));
+  }
+  decivolts = servoVoltRaw;
+  servoVoltId = 0xFF;
+  return servoVoltSeen;
 }

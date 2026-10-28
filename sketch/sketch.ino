@@ -40,6 +40,8 @@ static bool servoReplyReady = false;
 static uint8_t servoMidId = 0xFF, servoMidCount = 0;
 static uint32_t servoMidNextUs = 0;
 static bool rawNotifyEveryTick = false;
+static PowerPacket power = {};
+static bool powerReady = false;
 
 static void receiveCommand(MsgPack::bin_t<uint8_t> bytes) {
   CommandPacket cmd;
@@ -291,6 +293,26 @@ static void applyServoOp(const ServoPacket &pkt) {
   publishServoReply(reply);
 }
 
+static void samplePower(uint16_t mask) {
+  PowerPacket p = {};
+  memcpy(p.magic, "DQP1", 4);
+  p.servoId = 0xFF;
+  // Every servo sees the battery voltage; ask only the first one present.
+  for (unsigned i = 0; i < NUM_MOTORS; ++i) {
+    if (!(mask & (1u << i))) continue;
+    uint8_t decivolts = 0;
+    if (readServoVoltage(MOTOR_IDS[i], decivolts)) {
+      p.servoId = MOTOR_IDS[i];
+      p.decivolts = decivolts;
+    }
+    break;
+  }
+  k_mutex_lock(&hostMu, K_FOREVER);
+  power = p;
+  powerReady = true;
+  k_mutex_unlock(&hostMu);
+}
+
 static void controlTask(void*, void*, void*) {
   Serial1.begin(SERVO_BAUD);
   enableUartFifo(reinterpret_cast<USART_TypeDef*>(DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), serials, 0))));
@@ -376,6 +398,7 @@ static void controlTask(void*, void*, void*) {
     }
     parseServoRx();
     if (imu.ok) lastHealthyUs = micros();
+    if (seq % VOLTAGE_READ_TICKS == 0) samplePower(servoRxMask);
     StatePacket s = {};
     memcpy(s.magic, "DQS1", 4); s.version = 1;
     s.flags = (imu.ok ? 1 : 0) | (enabled ? 2 : 0) | (timedOut ? 4 : 0) |
@@ -447,6 +470,17 @@ static void reportTask(void*, void*, void*) {
       rb.resize(sizeof(cr));
       memcpy(rb.data(), &cr, sizeof(cr));
       Bridge.notify("duck_cal_reply", rb);
+    }
+    PowerPacket pw = {};
+    bool powerNew = false;
+    k_mutex_lock(&hostMu, K_FOREVER);
+    if (powerReady) { pw = power; powerReady = false; powerNew = true; }
+    k_mutex_unlock(&hostMu);
+    if (powerNew) {
+      MsgPack::bin_t<uint8_t> pb;
+      pb.resize(sizeof(pw));
+      memcpy(pb.data(), &pw, sizeof(pw));
+      Bridge.notify("duck_power", pb);
     }
     if ((++reports % 100) == 0) {
       MsgPack::bin_t<uint8_t> pd;

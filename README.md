@@ -8,7 +8,7 @@ Based on [Microduck](https://github.com/pollen-robotics/microduck) by [Pollen Ro
 
 1. Open the project in **Arduino App Lab** and click **Run**. For a new board, complete the first-time setup below.
 2. Open the web interface shown by App Lab, or visit `http://<board-ip>:9527`.
-3. Check that **Servos online** shows **15/15** and **IMU** shows **online**.
+3. Check that **Servos online** shows **15/15**, **IMU** shows **online** and **Battery** shows a voltage.
 4. The app starts in **Inference only**, with the motors unloaded. Finish servo setup and calibration before enabling motion.
 
 ### First-time board setup
@@ -75,6 +75,15 @@ The pictures show every joint at 0°, rendered from the [xgoduck_rl](https://git
 Use the left pad to move and the right pad to turn. Release a pad to return it to center. Use **Head and mouth** to adjust the head and mouth. **Pick** and **Roulade** are available while walking upright.
 
 Leaving the Control page stops travel but keeps motor torque enabled. Use **Torque off** when you want the robot to rest.
+
+## Battery
+
+**Battery** on the Control page shows the battery voltage and a rough charge level for the 8.4 V pack. One servo reports it once per second, and the page shows the middle value of the last 10 readings.
+
+- Below **7.0 V** a yellow reminder asks you to charge soon.
+- Below **6.6 V** a red reminder asks you to turn torque off and charge now.
+
+The voltage dips while the servos work, so the level reads lower during walking than at rest. **No servo reading** means no servo answered: check that the power switch is on.
 
 ## Roller walking
 

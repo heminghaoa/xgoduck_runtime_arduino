@@ -19,6 +19,10 @@ static constexpr uint16_t CAL_HOLD_POS = 2048;
 static const uint8_t ADDR_GOAL_POS = 0x2A;
 static const uint8_t ADDR_PRESENT = 0x38;
 static const uint8_t PRESENT_LEN = 6;
+// Present voltage, one byte in 0.1 V. The servos run straight off the battery.
+static const uint8_t ADDR_PRESENT_VOLTAGE = 0x3E;
+static const uint32_t VOLTAGE_REPLY_US = 1000;
+static const uint32_t VOLTAGE_READ_TICKS = 100;
 static const uint8_t ADDR_TORQUE = 40;
 static const uint8_t ADDR_TEMP_KP = 50;
 static const uint8_t ADDR_TEMP_KD = 51;

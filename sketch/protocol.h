@@ -75,6 +75,11 @@ struct __attribute__((packed)) ServoReplyPacket {
   uint16_t centerPos;
   uint8_t kp, kd;
 };
+struct __attribute__((packed)) PowerPacket {
+  char magic[4];
+  uint8_t servoId;    // 0xFF when no servo answered
+  uint8_t decivolts;
+};
 static_assert(sizeof(CommandPacket) == 80, "Command ABI");
 static_assert(sizeof(StatePacket) == 240, "State ABI");
 static_assert(sizeof(CalPacket) == 10, "Cal ABI");
@@ -82,3 +87,4 @@ static_assert(sizeof(CalReplyPacket) == 10, "Cal reply ABI");
 static_assert(sizeof(ServoPacket) == 12, "Servo ABI");
 static_assert(sizeof(RawPacket) == 38, "Raw ABI");
 static_assert(sizeof(ServoReplyPacket) == 14, "Servo reply ABI");
+static_assert(sizeof(PowerPacket) == 6, "Power ABI");

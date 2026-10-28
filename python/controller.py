@@ -15,6 +15,23 @@ PICK_MOUTH_CLOSE_PHI = 0.4
 ROULADE_S = 1.9
 ROULADE_ALPHA = 0.15
 CONTROL_PERIOD = 0.02
+# 2S Li-ion pack, 8.4 V full. One servo reports it once per second; it sags while
+# the servos work, so levels use the median of the last 10 readings.
+BATTERY_LOW_V = 7.0
+BATTERY_CRITICAL_V = 6.6
+BATTERY_STALE_S = 3.0
+BATTERY_VALID_V = (4.0, 9.5)
+# Rough resting charge curve: pack volts -> percent.
+BATTERY_CURVE = ((6.6, 0), (7.0, 10), (7.3, 20), (7.45, 30), (7.55, 40), (7.65, 50),
+                 (7.75, 60), (7.85, 70), (8.0, 80), (8.15, 90), (8.3, 100))
+
+def battery_percent(volts):
+    if volts <= BATTERY_CURVE[0][0]:
+        return 0
+    for (v0, p0), (v1, p1) in zip(BATTERY_CURVE, BATTERY_CURVE[1:]):
+        if volts <= v1:
+            return round(p0 + (p1-p0)*(volts-v0)/(v1-v0))
+    return 100
 
 class Controller:
     def __init__(self, bridge):
@@ -88,6 +105,37 @@ class Controller:
         self.servo_reply = None
         self.servo_reply_event = threading.Event()
         self.servo_expected_reply = None
+        self.battery_samples = collections.deque(maxlen=10)
+        self.battery_servo = None
+        self.battery_time = 0.0
+
+    def receive_power(self, raw):
+        try:
+            pkt = decode_power(raw)
+        except ValueError:
+            return
+        volts = pkt['voltage']
+        with self.lock:
+            if volts is None:
+                # No servo answered, so the servos are unpowered: drop old readings.
+                self.battery_samples.clear()
+            elif BATTERY_VALID_V[0] <= volts <= BATTERY_VALID_V[1]:
+                self.battery_samples.append(volts)
+            else:
+                return
+            self.battery_servo = pkt['servo_id']
+            self.battery_time = time.monotonic()
+
+    def _battery_status_locked(self, now):
+        result = dict(voltage=None, percent=None, level='unknown', servo_id=None,
+                      low_v=BATTERY_LOW_V, critical_v=BATTERY_CRITICAL_V)
+        if not self.battery_samples or now-self.battery_time > BATTERY_STALE_S:
+            return result
+        volts = sorted(self.battery_samples)[len(self.battery_samples)//2]
+        level = 'critical' if volts < BATTERY_CRITICAL_V else 'low' if volts < BATTERY_LOW_V else 'ok'
+        result.update(voltage=volts, percent=battery_percent(volts), level=level,
+                      servo_id=self.battery_servo)
+        return result
 
     def receive_boot_pd(self, raw):
         if not isinstance(raw, (bytes, bytearray)) or len(raw)!=32: return
@@ -683,6 +731,7 @@ class Controller:
                 cal_done=list(self.cal_done), cal_hold_pos=CAL_HOLD_POS, raw_mask=self.raw_mask)
             result['control_ready']=bool(fb and fb.imu_ok and now-self.rx_time<.15 and self.mode not in EXCLUSIVE_MODES)
             result['servo_scan_version'] = 2
+            result['battery'] = self._battery_status_locked(now)
             result['roller'] = dict(enabled=self.roller_mode, model=self.roller_policy.file,
                                     walk_model=self.policy.file, default_deg=self.roller_policy.default_deg,
                                     action_scale=self.roller_policy.action_scale,

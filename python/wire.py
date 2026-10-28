@@ -10,6 +10,7 @@ CAL_REPLY = struct.Struct('<4sIBB')
 SERVO = struct.Struct('<4sBBBBBBH')
 RAW = struct.Struct('<4sHH15H')
 SERVO_REPLY = struct.Struct('<4sBBBBHHBB')
+POWER = struct.Struct('<4sBB')
 ALL_MASK = 0x7fff  # hardware order: 10..14,20..24,30..34
 DISARM, ARM, POLICY, HOLD = range(4)
 
@@ -34,6 +35,7 @@ assert CAL_REPLY.size == 10
 assert SERVO.size == 12
 assert RAW.size == 38
 assert SERVO_REPLY.size == 14
+assert POWER.size == 6
 
 @dataclass(frozen=True)
 class Feedback:
@@ -174,6 +176,16 @@ def decode_servo_reply(data):
         raise ValueError('invalid servo reply ID')
     return {'op': x[1], 'target_id': x[2], 'ok': bool(x[3]),
             'raw_pos': x[5], 'center_pos': x[6], 'kp': x[7], 'kd': x[8]}
+
+def decode_power(data):
+    if not isinstance(data, (bytes, bytearray)) or len(data) != POWER.size:
+        raise ValueError('expected 6-byte power')
+    magic, servo_id, decivolts = POWER.unpack(data)
+    if magic != b'DQP1' or (servo_id > 253 and (servo_id != 0xFF or decivolts)):
+        raise ValueError('invalid power ABI')
+    if servo_id == 0xFF:
+        return {'servo_id': None, 'voltage': None}
+    return {'servo_id': servo_id, 'voltage': decivolts / 10}
 
 def elapsed_us(now, before):
     return (now-before) & 0xffffffff
