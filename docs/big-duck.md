@@ -236,8 +236,16 @@ usb_max_current_enable=1
 ### 第 5 阶段：仿真和训练（4090 / 5090）
 
 - [ ] **ST3215 辨识（BAM）**：一个舵机加一根打印的摆臂和砝码，录数据拟合参数。xgoduck_rl 里给 HLS1910 做过（`robot/xgoduck/params/1910_m6.json`），流程一样。
-- [ ] **仿真模型**：先把 Microduck 模型放大 1.4 倍，换上 ST3215 的重量和参数，早点开始训；Onshape 导出后换成导出的模型，重量用实际称的。
-- [ ] **xgoduck_rl 里加 big duck 机器人**：照 `xgoduck_constants.py` 写，转头范围限制到 ±90°，背包和加长的脚加进碰撞模型。xgoduck_rl 现在是 LuwuDynamics 的原版克隆，要先在 GitHub 上 fork 一份，或者先在本地建一个 `big-duck` 分支。
+- [x] **仿真模型**（2026-10-29，xgoduck_rl 本地 `big-duck` 分支 `51168e8`，`robot/bigduck_constants.py`）：加载时从 Microduck 的模型生成，长度放大 1.4 倍，打印件按 2.35 倍加重，舵机换成 55 g 的 ST3215（嘴巴舵机不装），电子件按"布局"那张表放进背包，IMU 在躯干正中，鞋底换成脚跟长 16 mm 的长方体，转头限制在 ±90°。整机 1.89 kg，站立时躯干离地 0.1651 m。Onshape 导出后换成导出的模型，重量用实际称的。
+- [x] **走路任务** `Mjlab-Velocity-Flat-BigDuck`：照搬 Microduck 的走路训练，抬脚高度和脚下探测圈按 1.4 倍放大。本机 CPU 上验证过：能建起来，不动时稳稳站住，PPO 能跑。在 4090 上训练：
+
+  ```bash
+  uv run train Mjlab-Velocity-Flat-BigDuck --env.scene.num-envs 4096
+  ```
+
+  舵机模型现在是**占位**的：用 BAM 自带的 STS3215（7.4 V 版）参数，电压取 6～7 V，让堵转力矩落在 C018 标称的 30 kg·cm 左右。下面的辨识做完就换掉。
+- [ ] **把 xgoduck_rl 的 `big-duck` 分支弄到 4090 那台机器上**：它的 origin 是 LuwuDynamics 的原版，推不上去，要先在 GitHub 上 fork 一份再推。
+- [ ] **起身任务**还没加；背包的碰撞盒已经放在全碰撞模型（`get_standup_spec`）里了。
 - [ ] **训练顺序**：站立 → 走路 → 起身，导出 ONNX。
 
 ### 第 6 阶段：鸭子上的程序（本分支）
