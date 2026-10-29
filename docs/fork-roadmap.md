@@ -55,13 +55,15 @@ App 和连接服务都要依赖这些功能，网页调试页也能直接受益�
 
 ## 第 2 阶段：连接服务 duck-connect（现有硬件）
 
+2026-10-29 代码已写好（分支 `feat/duck-connect`，`connect/`），协议见 [duck-connect.md](duck-connect.md)。单元测试 21 项通过，包括用很小的 MTU 模拟整段手机对话；**还没上板**。2.1–2.4 等上板测试通过后打勾。
+
 板子条件已确认（2026-10-29）：BlueZ（蓝牙控制器名为 "Duck"）、NetworkManager 和 avahi-daemon 都在运行，板子上容器外的程序能访问 `127.0.0.1:9527`。
 
-- [ ] **2.1 蓝牙 GATT 服务**：设备信息、配对验证（基于配对密钥的挑战-应答）、Wi-Fi 列表、Wi-Fi 配置（加密写入）、配网状态通知、电量和模式通知、简单遥控。
+- [ ] **2.1 蓝牙 GATT 服务**：设备信息、配对验证（基于配对密钥的挑战-应答）、Wi-Fi 列表、Wi-Fi 配置（加密写入）、配网状态通知、电量和模式通知、简单遥控。直接用 BlueZ 的 D-Bus 接口（dbus-fast）实现，能知道每次写入来自哪部手机和连接的 MTU。配对是双向的：鸭子也要证明自己知道密钥，手机才发送用 AES-GCM 加密的 Wi-Fi 密码。
 - [ ] **2.2 Wi-Fi 管理**：通过 NetworkManager 扫描、连接、保存多个网络并设置优先级，包括家里的 Wi-Fi 和手机热点。
 - [ ] **2.3 Bonjour 广播**：用 avahi 广播 `_xgoduck._tcp`，TXT 记录里带编号和端口。板子上没装 avahi-utils（没有 `avahi-browse`），广播可以直接在 `/etc/avahi/services/` 放服务文件。
 - [ ] **2.4 安装脚本**：`tools/install-connect.sh` 安装 systemd 服务，做法和 `tools/router-2m.sh` 一样。同时用 `arduino-app-cli properties set default user:xgoduck_runtime_arduino` 让 App 开机自动启动；现在板子没有设默认 App，重启后要手动启动。App 启动时是仅推理模式，舵机不出力，自启是安全的。
-- [ ] **2.5 测试**：先用 iPhone 上的 nRF Connect 测完所有蓝牙功能，再开始写 App。
+- [ ] **2.5 测试**：先在 Mac 上用桌面测试客户端 `connect/ble_client.py` 测完所有蓝牙功能，再开始写 App。原计划用 iPhone 上的 nRF Connect，但它算不出配对用的 HMAC，过不了配对；nRF Connect 只用来看广播和服务。
 
 ## 第 3 阶段：iOS App 最小版本（现有硬件）
 

@@ -9,6 +9,7 @@
 > - **Calibration:** a zero-pose picture for every joint, rendered from the [xgoduck_rl](https://github.com/LuwuDynamics/xgoduck_rl) model (Apache-2.0).
 > - **Battery:** battery voltage and a low-battery reminder on the Control page.
 > - **Languages:** the web pages in English, Chinese and Japanese.
+> - **duck-connect (in progress):** a service outside App Lab for Bluetooth pairing, Wi-Fi setup and Bonjour, for the planned phone app. Not yet tested on a duck; see [docs/duck-connect.md](docs/duck-connect.md).
 >
 > Planned work, in Chinese: [docs/fork-roadmap.md](docs/fork-roadmap.md).
 
@@ -188,4 +189,4 @@ Release a slider to apply its value. The duck saves both groups and the IMU filt
 
 ## Project files
 
-`data/` holds this duck's saved settings, ID, pairing key and paired clients and is not committed. `assets/` contains the web interface, `assets/zero/` its calibration pictures, `assets/model/` the 3D model and `assets/libs/` bundled libraries, `python/` the controller and models, `sketch/` the Uno Q firmware, and `tools/` the installation helpers and the picture renderer.
+`data/` holds this duck's saved settings, ID, pairing key and paired clients and is not committed. `assets/` contains the web interface, `assets/zero/` its calibration pictures, `assets/model/` the 3D model and `assets/libs/` bundled libraries, `python/` the controller and models, `sketch/` the Uno Q firmware, `connect/` the duck-connect service and its desktop test client, and `tools/` the installation helpers and the picture renderer.

@@ -1,0 +1,13 @@
+[Unit]
+Description=XGO Duck connect: Bluetooth pairing, Wi-Fi setup and Bonjour
+After=bluetooth.service NetworkManager.service avahi-daemon.service
+Wants=bluetooth.service
+
+[Service]
+WorkingDirectory=/opt/duck-connect
+ExecStart=/opt/duck-connect/venv/bin/python -m duck_connect --identity @IDENTITY@
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
