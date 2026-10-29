@@ -6,6 +6,8 @@ The duck pushes "status" to every client STATUS_HZ times a second. Clients send
   command {twist?, head?, mouth?}    -> {ok: false, error} on failure
   mode    {mode}                    -> {ok, mode} or {ok: false, error}
   action  {name: "pick"|"roulade"}  -> {ok, ...} or {ok: false, error}
+Status carries the measured servo angles (degrees, in "motors" order) and the filtered
+gravity vector, so the app can pose its 3D duck like the web page's 3D view.
 When pairing is required, control needs the token sent in hello. It is checked
 again on every message, so a removed client loses control at once.
 """
@@ -15,13 +17,18 @@ STATUS_HZ = 10
 REMOTE_MODES = ('shadow', 'off', 'hold', 'policy')
 STATUS_KEYS = ('mode', 'enabled', 'control_ready', 'full_robot_ready', 'feedback_hz', 'inference_hz',
                'imu_ok', 'servo_ids', 'missing_joint_ids', 'battery', 'active_model', 'last_error',
-               'settings_error', 'command', 'head', 'mouth')
+               'settings_error', 'command', 'head', 'mouth', 'motors')
 
 def compact_status(s):
     out = {k: s.get(k) for k in STATUS_KEYS}
     out['recovery'] = {k: s['recovery'].get(k) for k in ('active', 'phase', 'angle_deg')}
     out.update(pick_active=s['pick']['active'], roulade_active=s['roulade']['active'],
                roller=s['roller']['enabled'])
+    # Rounded: ten times a second to every phone, a tenth of a degree is plenty to draw with.
+    angles, gravity, age = s.get('angles'), s.get('gravity'), s.get('feedback_age_ms')
+    out.update(angles=[round(a, 1) for a in angles] if angles else None,
+               gravity=[round(g, 3) for g in gravity] if gravity else None,
+               feedback_age_ms=round(age) if age is not None else None)
     return out
 
 class Realtime:
