@@ -385,9 +385,9 @@ const I18N={
   'view.parts':['Add-on parts','扩展部件','追加パーツ'],
   'view.reset':['Reset view','重置视角','視点をリセット'],
   'view.hint':[
-    'Drag to rotate, scroll or pinch to zoom, right-drag or drag with two fingers to pan. Live pose follows the servo feedback ten times a second; without feedback the duck stands in its default pose. The mouth is not modelled. Add-on parts shows where the planned USB camera, hub, sound card and speaker go, with the head see-through.',
-    '拖动旋转，滚轮或双指捏合缩放，右键拖动或双指拖动平移。实时姿态每秒按舵机反馈更新十次；没有反馈时鸭子保持默认姿态。模型里没有嘴。“扩展部件”会显示计划中的 USB 摄像头、集线器、声卡和喇叭装在哪里，并把头部变成半透明。',
-    'ドラッグで回転、スクロールかピンチでズーム、右ドラッグか 2 本指ドラッグで移動します。ライブ姿勢はサーボのフィードバックに合わせて毎秒 10 回更新し、フィードバックがないときはデフォルト姿勢で立ちます。くちばしはモデル化していません。「追加パーツ」では、予定している USB カメラ、ハブ、サウンドカード、スピーカーの取り付け位置を、頭を透かして表示します。'],
+    'Drag to rotate, scroll or pinch to zoom, right-drag or drag with two fingers to pan. Live pose follows the servo feedback ten times a second; without feedback the duck stands in its default pose. The beak follows the mouth servo (34). Add-on parts shows where the planned USB camera, hub, sound card and speaker go, with the head see-through.',
+    '拖动旋转，滚轮或双指捏合缩放，右键拖动或双指拖动平移。实时姿态每秒按舵机反馈更新十次；没有反馈时鸭子保持默认姿态。嘴随 34 号舵机开合。“扩展部件”会显示计划中的 USB 摄像头、集线器、声卡和喇叭装在哪里，并把头部变成半透明。',
+    'ドラッグで回転、スクロールかピンチでズーム、右ドラッグか 2 本指ドラッグで移動します。ライブ姿勢はサーボのフィードバックに合わせて毎秒 10 回更新し、フィードバックがないときはデフォルト姿勢で立ちます。くちばしは 34 番のサーボに合わせて開閉します。「追加パーツ」では、予定している USB カメラ、ハブ、サウンドカード、スピーカーの取り付け位置を、頭を透かして表示します。'],
   'view.missing':['{file} missing','缺少 {file}','{file} がありません'],
   'view.default':['Showing the default pose','正在显示默认姿态','デフォルト姿勢を表示しています'],
   'view.liveStatus':['Live · {hz} Hz feedback · {n}/15 servos','实时 · 反馈 {hz} Hz · 舵机 {n}/15','ライブ · フィードバック {hz} Hz · サーボ {n}/15'],

@@ -36,8 +36,8 @@ let root=null, rootQuat=null, gravity=null, live=false;
 
 async function load(){
   const [model,bin]=await Promise.all([
-    fetch('model/model.json').then(r=>{if(!r.ok)throw new Error(t('view.missing',{file:'model.json'}));return r.json();}),
-    fetch('model/model.bin').then(r=>{if(!r.ok)throw new Error(t('view.missing',{file:'model.bin'}));return r.arrayBuffer();}),
+    fetch('model/model.json?v=20261029').then(r=>{if(!r.ok)throw new Error(t('view.missing',{file:'model.json'}));return r.json();}),
+    fetch('model/model.bin?v=20261029').then(r=>{if(!r.ok)throw new Error(t('view.missing',{file:'model.bin'}));return r.arrayBuffer();}),
   ]);
   const geoms=model.meshes.map(m=>{
     const q=new Int16Array(bin,m.offset,m.vertices*3), pos=new Float32Array(m.vertices*3);
@@ -71,7 +71,7 @@ async function load(){
       if(b.joint.motor)joints[b.joint.motor]=j;
       pivot.quaternion.setFromAxisAngle(j.axis,j.q);
     }
-    const mat=b.name==='jaw_soft'?headMat:bodyMat;
+    const mat=b.name==='jaw_soft'||b.name==='mouth'?headMat:bodyMat;
     for(const g of b.geoms){
       const mesh=new THREE.Mesh(geoms[g.mesh],mat);
       mesh.position.fromArray(g.pos);mesh.quaternion.copy(quat(g.quat));

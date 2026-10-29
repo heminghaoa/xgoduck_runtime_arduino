@@ -105,9 +105,9 @@ The voltage dips while the servos work, so the level reads lower during walking 
 
 ## 3D view
 
-**3D** shows the duck from the training model, posed live from the servo feedback ten times a second and tilted by the IMU. Drag to rotate, scroll or pinch to zoom. **Add-on parts** shows where the planned USB camera, hub, sound card and speaker go, with the head see-through. Without feedback the duck stands in its default pose; the mouth is not modelled.
+**3D** shows the duck from the training model, posed live from the servo feedback ten times a second and tilted by the IMU. Drag to rotate, scroll or pinch to zoom. **Add-on parts** shows where the planned USB camera, hub, sound card and speaker go, with the head see-through. The beak opens and closes with the mouth servo (34). Without feedback the duck stands in its default pose with the beak closed.
 
-The model lives in `assets/model/`. To regenerate it on a desktop machine with `mujoco` and `numpy` installed, run `python tools/export-3d-model.py <xgoduck_rl>/src/mjlab_microduck/robot/xgoduck/scene_walk.xml assets/model`. The page uses [three.js](https://threejs.org/) 0.170.0 (MIT), included in `assets/libs/three/` so it works without internet.
+The model lives in `assets/model/`. To regenerate it on a desktop machine with `mujoco`, `numpy` and `scipy` installed, run `python tools/export-3d-model.py <xgoduck_rl>/src/mjlab_microduck/robot/xgoduck/scene_walk.xml assets/model <xgoduck_hardware>/structure`. The training model's head is one rigid mesh, so the tool uses the [xgoduck_hardware](https://github.com/LuwuDynamics/xgoduck_hardware) head parts only as a reference to cut the lower beak out of it and to place its hinge; the exported geometry is all from xgoduck_rl. The page uses [three.js](https://threejs.org/) 0.170.0 (MIT), included in `assets/libs/three/` so it works without internet.
 
 ## Pairing sticker
 
