@@ -4,6 +4,8 @@
 
 开发者继续用 Arduino App Lab 开发和部署鸭子上的程序。网页控制页保留，作为开发者调试工具。
 
+不开 App Lab 也能部署：把文件拷到板子上的 `~/ArduinoApps/xgoduck_runtime_arduino`，再用 `arduino-app-cli app stop` 和 `app start` 重启（`app restart` 有时启动不了）。只改 `assets/` 里的网页文件时不用重启。
+
 ## 现有硬件
 
 | 有 | 还没有 |
@@ -32,27 +34,33 @@ iPhone App（SwiftUI）
 
 ## 第 0 阶段：已完成
 
+2026-10-29 已全部部署到鸭子上（分支 `feat/i18n`，包含下面所有功能）。各功能分支是一层层叠起来的，`master` 还停在 `bde1cc0`，以后要合并。
+
 - [x] 校准页每个关节的零位参考图（`20c2eef`）
-- [x] 网页显示电池电压和低电量提醒（`189a992`），**待上板验证**舵机电压寄存器 0x3E
+- [x] 网页显示电池电压和低电量提醒（`189a992`）。上板读数 7.7–7.8V，看起来合理，还要用万用表核对（见"待上板确认"）。
 - [x] README 非官方改版说明，`.gitignore` 忽略 `.env`（`81c4b07`）
-- [x] 网页 3D 视图（分支 `feat/3d-view`）：训练模型导出成 `assets/model/`，用 three.js 显示，跟着舵机反馈实时动、按 IMU 倾斜，可叠加显示 USB 零件的摆放位置。**待上板验证**。以后 iOS App 可以复用同一份模型。
+- [x] 网页 3D 视图（`0a9b246`）：训练模型导出成 `assets/model/`，用 three.js 显示，跟着舵机反馈实时动、按 IMU 倾斜，可叠加显示 USB 零件的摆放位置。以后 iOS App 可以复用同一份模型。
+- [x] 3D 视图里的嘴跟着 34 号舵机开合（`64f7a63`）：训练模型的头是一整块，导出工具用 xgoduck_hardware 的头部零件作参考，把下喙切出来、找到转轴；输出的形状全部来自 xgoduck_rl。已在真鸭子上确认开合方向正确。
+- [x] 网页支持中文、英文、日文（`2336545`）：右上角切换，浏览器记住选择；文字都在 `assets/i18n.js`。鸭子后端返回的错误信息仍是英文。
 
 ## 第 1 阶段：鸭子端基础（现有硬件）
 
-App 和连接服务都要依赖这些功能，网页调试页也能直接受益。
+App 和连接服务都要依赖这些功能，网页调试页也能直接受益。2026-10-29 全部部署到鸭子上，App 正常启动，接口都能访问；没打勾的还差实际走一遍流程。
 
-- [ ] **1.1 配置保存**：动作幅度、平滑、IMU 滤波、鸭子名字写进 `data/settings.json`，开机自动恢复。接口为 `GET /api/settings`、`POST /api/settings`（只改传入的字段）和 `POST /api/settings/reset`。代码已写好（分支 `feat/config-persistence`），**待上板验证**。
-- [ ] **1.2 设备身份**：首次启动时生成 8 位编号和 128 位配对密钥，保存在 `data/identity.json`（权限 600）。文件损坏时报错，不会悄悄重新生成，以免已打印的贴纸作废。`GET /api/identity` 只返回编号，不返回密钥。代码已写好，**待上板验证**。
-- [ ] **1.3 贴纸二维码**：网页新增 Pairing 页，显示二维码并可以按 30mm 宽打印，内容格式为 `xgoduck://pair?id=<编号>&k=<密钥>&v=1`。点"I have saved the sticker"后（认领），鸭子不再通过网络显示密钥。弄丢贴纸时，删除 `data/identity.json` 重新生成。二维码由 Python 库 segno 生成，已加进 `requirements.txt`。代码已写好，**待上板验证**。以后可以考虑改成 https 通用链接，这样没装 App 的人扫码也能看到说明页。
-- [ ] **1.4 访问令牌**：挑战-应答配对，`GET /api/pair/challenge` 取一次性随机数，`POST /api/pair` 提交 `HMAC-SHA256(密钥, "xgoduck-pair:<编号>:<随机数>")`，换取令牌。密钥不在网络上传输，鸭子只保存令牌的哈希（`data/access.json`）。FastAPI 中间件统一检查 `Authorization: Bearer`。默认免密；在 Pairing 页打开"Require pairing"后，未配对的客户端只能看状态。打开这个开关要求当前浏览器已配对，防止把自己锁在外面；文件损坏时按锁定处理。网页用自带的 SHA-256 和 HMAC（普通 HTTP 页面没有 `crypto.subtle`）。代码已写好，**待上板验证**。以后可以用 WebUI 自带的 TLS（`use_tls`）给令牌加密。
-- [ ] **1.5 实时通道**：用 WebUI brick 自带的 Socket.IO（`/socket.io`）以 10 Hz 推送精简状态，接收 `command`、`mode`（只允许 shadow、off、hold、policy）和 `action`（pick、roulade）。WebUI 连接时拿不到令牌，所以客户端先发 `hello` 带令牌，之后每条消息都重新核对，被移除的设备立即失去控制权。正在遥控的客户端断开时立即停止移动。网页继续用 REST。iOS 端可以用 Socket.IO-Client-Swift。代码已写好，并用真实的 WebUI brick 源码测过，**待上板验证**。
+- [ ] **1.1 配置保存**：动作幅度、平滑、IMU 滤波、鸭子名字写进 `data/settings.json`，开机自动恢复。接口为 `GET /api/settings`、`POST /api/settings`（只改传入的字段）和 `POST /api/settings/reset`。上板后接口正常；设置还没改过，所以文件还没生成。**还差**：改一个设置 → 重启 App → 确认设置还在。
+- [x] **1.2 设备身份**：首次启动时生成 8 位编号和 128 位配对密钥，保存在 `data/identity.json`（权限 600）。文件损坏时报错，不会悄悄重新生成，以免已打印的贴纸作废。`GET /api/identity` 只返回编号，不返回密钥。上板确认：编号 71577AA6，文件权限 600。
+- [x] **1.3 贴纸二维码**：网页新增 Pairing 页，显示二维码并可以按 30mm 宽打印，内容格式为 `xgoduck://pair?id=<编号>&k=<密钥>&v=1`。点"I have saved the sticker"后（认领），鸭子不再通过网络显示密钥。弄丢贴纸时，删除 `data/identity.json` 重新生成。二维码由 Python 库 segno 生成，App Lab 启动时会自动安装。上板确认：贴纸已打印并认领。以后可以考虑改成 https 通用链接，这样没装 App 的人扫码也能看到说明页。
+- [ ] **1.4 访问令牌**：挑战-应答配对，`GET /api/pair/challenge` 取一次性随机数，`POST /api/pair` 提交 `HMAC-SHA256(密钥, "xgoduck-pair:<编号>:<随机数>")`，换取令牌。密钥不在网络上传输，鸭子只保存令牌的哈希（`data/access.json`）。FastAPI 中间件统一检查 `Authorization: Bearer`。默认免密；在 Pairing 页打开"Require pairing"后，未配对的客户端只能看状态。打开这个开关要求当前浏览器已配对，防止把自己锁在外面；文件损坏时按锁定处理。网页用自带的 SHA-256 和 HMAC（普通 HTTP 页面没有 `crypto.subtle`）。上板后配对接口正常。**还差**：用浏览器扫贴纸配对一次，打开"Require pairing"，确认未配对的浏览器只能看不能控制。以后可以用 WebUI 自带的 TLS（`use_tls`）给令牌加密。
+- [ ] **1.5 实时通道**：用 WebUI brick 自带的 Socket.IO（`/socket.io`）以 10 Hz 推送精简状态，接收 `command`、`mode`（只允许 shadow、off、hold、policy）和 `action`（pick、roulade）。WebUI 连接时拿不到令牌，所以客户端先发 `hello` 带令牌，之后每条消息都重新核对，被移除的设备立即失去控制权。正在遥控的客户端断开时立即停止移动。网页继续用 REST。iOS 端可以用 Socket.IO-Client-Swift。上板后 Socket.IO 握手正常。**还差**：用一个真正的客户端（测试脚本或 App）连上，测状态推送、控制命令和断开即停。
 
 ## 第 2 阶段：连接服务 duck-connect（现有硬件）
 
+板子条件已确认（2026-10-29）：BlueZ（蓝牙控制器名为 "Duck"）、NetworkManager 和 avahi-daemon 都在运行，板子上容器外的程序能访问 `127.0.0.1:9527`。
+
 - [ ] **2.1 蓝牙 GATT 服务**：设备信息、配对验证（基于配对密钥的挑战-应答）、Wi-Fi 列表、Wi-Fi 配置（加密写入）、配网状态通知、电量和模式通知、简单遥控。
 - [ ] **2.2 Wi-Fi 管理**：通过 NetworkManager 扫描、连接、保存多个网络并设置优先级，包括家里的 Wi-Fi 和手机热点。
-- [ ] **2.3 Bonjour 广播**：用 avahi 广播 `_xgoduck._tcp`，TXT 记录里带编号和端口。
-- [ ] **2.4 安装脚本**：`tools/install-connect.sh` 安装 systemd 服务，做法和 `tools/router-2m.sh` 一样。
+- [ ] **2.3 Bonjour 广播**：用 avahi 广播 `_xgoduck._tcp`，TXT 记录里带编号和端口。板子上没装 avahi-utils（没有 `avahi-browse`），广播可以直接在 `/etc/avahi/services/` 放服务文件。
+- [ ] **2.4 安装脚本**：`tools/install-connect.sh` 安装 systemd 服务，做法和 `tools/router-2m.sh` 一样。同时用 `arduino-app-cli properties set default user:xgoduck_runtime_arduino` 让 App 开机自动启动；现在板子没有设默认 App，重启后要手动启动。App 启动时是仅推理模式，舵机不出力，自启是安全的。
 - [ ] **2.5 测试**：先用 iPhone 上的 nRF Connect 测完所有蓝牙功能，再开始写 App。
 
 ## 第 3 阶段：iOS App 最小版本（现有硬件）
@@ -82,11 +90,24 @@ App 和连接服务都要依赖这些功能，网页调试页也能直接受益�
 
 硬件清单见下面的"待购硬件"。音视频部分参考上游的 `next-audio-video-tof` 分支，移植到当前代码上。
 
+**已选方案 A2（2026-10-28）**：全部装进壳里，外面看不到电路板。
+
+| 零件 | 位置 |
+| --- | --- |
+| USB 摄像头 | 头部正前方，镜头当眼睛 |
+| USB 声卡（板载麦克风） | 头里，平躺在摄像头后面、头顶下方 |
+| 20mm 喇叭 | 头顶后部，头壳开孔出声 |
+| 集线器 | 插 UNO Q 的 USB-C，横在主板顶边 |
+| 主板 + 集线器 | 背部外壳里 |
+
+摄像头和声卡各一根 USB 线穿过脖子。头部重量估计增加约 11%（训练时只随机 ±5%），整机重心约升高 3mm，所以按新的重量重新训练走路模型，用本地 RTX 5090 和 4090。比较过的方案：A（声卡放背壳，背后约 +45g）、B（Media Carrier，最轻，但 UNO Q 上的摄像头和音频软件还不成熟，以后可以升级）。
+
+- [ ] **4.0 打印件**：摄像头眼框（卡住 32×32mm 板，镜头从眼眶穿出）；头内声卡和喇叭的支架，头壳顶部开出声孔；背部外壳（罩住主板和集线器，留出电源开关、电池插头和散热孔）。尺寸做成参数，零件到货后实测再定。
 - [ ] **4.1 摄像头**：装在头部当眼睛，UVC 视频流显示到 App 里，先用 MJPEG，以后换 WebRTC。
 - [ ] **4.2 看二维码配网**：给鸭子看手机上的 Wi-Fi 二维码，它自己连网。作为不装 App 时的备用方式。
 - [ ] **4.3 语音提示**：鸭子开口说"我连上网了""电量低"等。
 - [ ] **4.4 AI 灵魂**：语音识别 → 大模型 → 语音合成，在 App 里设置性格和声音，说话时动嘴、点头。
-- [ ] **4.5 头部加重后**：如果走路明显变差，按新的头部质量重新训练走路模型。
+- [ ] **4.5 重新训练**：零件称重后，把摄像头、声卡、喇叭、线和打印件的质量写进 xgoduck_rl 的模型，用本地 GPU 重新训练走路模型（必要时也重训起身），导出 ONNX 替换 `python/xgoduck_walk.onnx`。
 
 ## 第 5 阶段：产品化打磨
 
@@ -98,13 +119,21 @@ App 和连接服务都要依赖这些功能，网页调试页也能直接受益�
 
 ## 待上板确认
 
-- [ ] 1910 舵机电压寄存器 0x3E 的读数和万用表实测是否一致
-- [ ] App Lab 里的 Python 能写入哪个目录，并且重启和重新部署后不会丢（1.1、1.2 需要）
-- [ ] App Lab 会不会按 `requirements.txt` 自动安装新加的 segno（1.3 需要）
-- [ ] 板子上 WebUI brick 的版本是否提供 `ui.app`（FastAPI 实例），令牌中间件要挂在它上面（1.4 需要）
-- [ ] 板子上是否有 BlueZ（`bluetoothctl`）、NetworkManager（`nmcli`）和 avahi
-- [ ] 板子外的服务能否访问 `127.0.0.1:9527`
+2026-10-29 在鸭子上确认了 5 项。
+
+- [ ] 1910 舵机电压寄存器 0x3E 的读数和万用表实测是否一致（网页显示 7.7–7.8V，还没用万用表量）
+- [x] App Lab 里的 Python 能写入哪个目录，并且重启和重新部署后不会丢（1.1、1.2 需要）：容器里的 `/app/data` 就是板子上 App 文件夹里的 `data/`，存在板子的存储上，重启不会丢。重新部署时只要不删这个文件夹就行。
+- [x] App Lab 会不会按 `requirements.txt` 自动安装新加的 segno（1.3 需要）：会，启动日志里有 `+ segno==1.6.6`。
+- [x] 板子上 WebUI brick 的版本是否提供 `ui.app`（FastAPI 实例），令牌中间件要挂在它上面（1.4 需要）：提供，`access.install(ui.app)` 正常执行，App 启动没有报错。
+- [x] 板子上是否有 BlueZ（`bluetoothctl`）、NetworkManager（`nmcli`）和 avahi：都有，服务都在运行。
+- [x] 板子外的服务能否访问 `127.0.0.1:9527`：能。
 - [ ] 板子上是否有技适标志
+
+## 已知问题（2026-10-29 上板观察）
+
+- [ ] 陀螺仪静止时有约 3°/s 的零偏（y、z 轴），代码没有做零偏校准。对策略影响不大（约 0.05 rad/s），但会让重力估计偏约 1°（零偏 × 重力 τ）。可以加开机静止标定。
+- [ ] 左膝（13 号）站立时和目标差约 9°，右膝（23 号）约 3°，方向相同（都是负载下沉），但左边大很多。先在舵机设置页比较两者的 KP；把鸭子拎起来空载时如果还差好几度，就是中位偏了，要重新 Reset Mid。
+- [ ] 关节目标没有按模型范围限位：起身时颈部（30 号）被命令到约 −177°，实际转到 −150°，超出模型的 −135°。暂时不管；如果颈部舵机发烫或撞到身体，就在 `action_to_deg` 里按 xgoduck_rl 的关节范围限位。
 
 ## 待购硬件（Amazon.co.jp，2026-10-28 选定）
 
@@ -112,12 +141,12 @@ App 和连接服务都要依赖这些功能，网页调试页也能直接受益�
 | --- | --- | --- |
 | 摄像头 | [InnoMaker 720P UVC，120°](https://www.amazon.co.jp/dp/B0CLRJZG8D) | 装在头部，镜头从眼眶穿出，眼孔要从 11.4mm 扩到约 14.5mm |
 | 集线器 | [ELECOM U3HC-R030EBK](https://www.amazon.co.jp/dp/B0FT2DGWRN) | USB-C 直插，插头可旋转，21g |
-| 声卡 | [USB 声卡模组（带麦克风）](https://www.amazon.co.jp/dp/B0CXJ2RTWJ) | 附带的 100mm 喇叭装不下，不用 |
-| 喇叭 | [8Ω 2W，28×40mm，PH2.0 插头](https://www.amazon.co.jp/dp/B0D625YLZF) | 贴在机身侧面 |
+| 声卡 | [USB 声卡模组（带麦克风）](https://www.amazon.co.jp/dp/B0CXJ2RTWJ) | 放头里；附带的 100mm 喇叭不用，但它的 PH2.0 线可以剪下来接 20mm 喇叭 |
+| 喇叭 | [20mm 圆形，8Ω 1W，2 个装](https://www.amazon.co.jp/dp/B0GTXF789K) | 3.6mm 厚，放头顶后部；自带 1.25mm 插头，要改成 PH2.0 |
 
-头部只放摄像头。训练时头部质量只在 ±5% 内随机，大约 ±9g，其余部件都放在机身上。
+方案 A2 按上面这样放（见第 4 阶段）。原先选的 28×40mm 喇叭太厚太重，已经从清单里换掉。
 
-更轻的做法：到货后看清接口，把附带的长 USB 线换成 10–15cm 的短线；需要的话，喇叭可以换成 20mm 圆形的（插头要改成 PH2.0），集线器可以换成裸板（要自己做线）。
+到货后：每样零件都称重，用于重新训练；看清接口后，把附带的长 USB 线换成短线。集线器以后还可以换成裸板（要自己做线），能再轻十几克。
 
 小外设（S.1–S.3）还没选型：WS2812 灯环或单颗灯、轻触开关、TTP223 触摸模块，都是便宜的小零件。
 
