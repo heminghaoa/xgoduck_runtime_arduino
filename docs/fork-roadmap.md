@@ -47,11 +47,11 @@ iPhone App（SwiftUI）
 
 App 和连接服务都要依赖这些功能，网页调试页也能直接受益。2026-10-29 全部部署到鸭子上，App 正常启动，接口都能访问；没打勾的还差实际走一遍流程。
 
-- [ ] **1.1 配置保存**：动作幅度、平滑、IMU 滤波、鸭子名字写进 `data/settings.json`，开机自动恢复。接口为 `GET /api/settings`、`POST /api/settings`（只改传入的字段）和 `POST /api/settings/reset`。上板后接口正常；设置还没改过，所以文件还没生成。**还差**：改一个设置 → 重启 App → 确认设置还在。
+- [x] **1.1 配置保存**：动作幅度、平滑、IMU 滤波、鸭子名字写进 `data/settings.json`，开机自动恢复。接口为 `GET /api/settings`、`POST /api/settings`（只改传入的字段）和 `POST /api/settings/reset`。上板确认（2026-10-29）：改了名字和角速度 α，文件写到板子上的 `data/settings.json`，重启 App 后两项都恢复，控制器也用上了新值；测完已改回原值。
 - [x] **1.2 设备身份**：首次启动时生成 8 位编号和 128 位配对密钥，保存在 `data/identity.json`（权限 600）。文件损坏时报错，不会悄悄重新生成，以免已打印的贴纸作废。`GET /api/identity` 只返回编号，不返回密钥。上板确认：编号 71577AA6，文件权限 600。
 - [x] **1.3 贴纸二维码**：网页新增 Pairing 页，显示二维码并可以按 30mm 宽打印，内容格式为 `xgoduck://pair?id=<编号>&k=<密钥>&v=1`。点"I have saved the sticker"后（认领），鸭子不再通过网络显示密钥。弄丢贴纸时，删除 `data/identity.json` 重新生成。二维码由 Python 库 segno 生成，App Lab 启动时会自动安装。上板确认：贴纸已打印并认领。以后可以考虑改成 https 通用链接，这样没装 App 的人扫码也能看到说明页。
-- [ ] **1.4 访问令牌**：挑战-应答配对，`GET /api/pair/challenge` 取一次性随机数，`POST /api/pair` 提交 `HMAC-SHA256(密钥, "xgoduck-pair:<编号>:<随机数>")`，换取令牌。密钥不在网络上传输，鸭子只保存令牌的哈希（`data/access.json`）。FastAPI 中间件统一检查 `Authorization: Bearer`。默认免密；在 Pairing 页打开"Require pairing"后，未配对的客户端只能看状态。打开这个开关要求当前浏览器已配对，防止把自己锁在外面；文件损坏时按锁定处理。网页用自带的 SHA-256 和 HMAC（普通 HTTP 页面没有 `crypto.subtle`）。上板后配对接口正常。**还差**：用浏览器扫贴纸配对一次，打开"Require pairing"，确认未配对的浏览器只能看不能控制。以后可以用 WebUI 自带的 TLS（`use_tls`）给令牌加密。
-- [ ] **1.5 实时通道**：用 WebUI brick 自带的 Socket.IO（`/socket.io`）以 10 Hz 推送精简状态，接收 `command`、`mode`（只允许 shadow、off、hold、policy）和 `action`（pick、roulade）。WebUI 连接时拿不到令牌，所以客户端先发 `hello` 带令牌，之后每条消息都重新核对，被移除的设备立即失去控制权。正在遥控的客户端断开时立即停止移动。网页继续用 REST。iOS 端可以用 Socket.IO-Client-Swift。上板后 Socket.IO 握手正常。**还差**：用一个真正的客户端（测试脚本或 App）连上，测状态推送、控制命令和断开即停。
+- [ ] **1.4 访问令牌**：挑战-应答配对，`GET /api/pair/challenge` 取一次性随机数，`POST /api/pair` 提交 `HMAC-SHA256(密钥, "xgoduck-pair:<编号>:<随机数>")`，换取令牌。密钥不在网络上传输，鸭子只保存令牌的哈希（`data/access.json`）。FastAPI 中间件统一检查 `Authorization: Bearer`。默认免密；在 Pairing 页打开"Require pairing"后，未配对的客户端只能看状态。打开这个开关要求当前浏览器已配对，防止把自己锁在外面；文件损坏时按锁定处理。网页用自带的 SHA-256 和 HMAC（普通 HTTP 页面没有 `crypto.subtle`）。上板后配对接口正常。**改到 3.1 和 App 一起测**（2026-10-29）：手机自带相机和常见扫码工具都读不出 `xgoduck://` 链接（相机提示"未找到可用数据"），拿不到链接就没法在浏览器里配对。App 用自己的代码读二维码原文，不受影响。在此之前保持"Require pairing"关闭，同一网络里谁都能控制鸭子，在家里没问题。以后可以用 WebUI 自带的 TLS（`use_tls`）给令牌加密。
+- [x] **1.5 实时通道**：用 WebUI brick 自带的 Socket.IO（`/socket.io`）以 10 Hz 推送精简状态，接收 `command`、`mode`（只允许 shadow、off、hold、policy）和 `action`（pick、roulade）。WebUI 连接时拿不到令牌，所以客户端先发 `hello` 带令牌，之后每条消息都重新核对，被移除的设备立即失去控制权。正在遥控的客户端断开时立即停止移动。网页继续用 REST。iOS 端可以用 Socket.IO-Client-Swift。上板确认（2026-10-29）：用 python-socketio 客户端测了 12 项，全部通过。状态推送 10.0 Hz；错误的命令、模式和动作都被拒绝并返回原因；在扭矩关闭时发送移动指令，断开连接后 0.06 秒内速度归零。
 
 ## 第 2 阶段：连接服务 duck-connect（现有硬件）
 
@@ -67,7 +67,7 @@ App 和连接服务都要依赖这些功能，网页调试页也能直接受益�
 
 新仓库 `xgoduck_ios`，用 SwiftUI 开发，需要真 iPhone 测试，模拟器测不了蓝牙。
 
-- [ ] **3.1 扫码配对**：扫贴纸二维码，用 CoreBluetooth 连接对应的鸭子，再完成配对验证。
+- [ ] **3.1 扫码配对**：扫贴纸二维码，用 CoreBluetooth 连接对应的鸭子，再完成配对验证。同时补测 1.4：用 App 拿到令牌，打开"Require pairing"，确认没配对的浏览器只能看不能控制。
 - [ ] **3.2 配网**：显示鸭子扫到的 Wi-Fi 列表，输入密码，提供"使用 iPhone 热点"选项，并显示配网进度。
 - [ ] **3.3 日常控制**：通过 Bonjour 自动发现鸭子，用 1.5 的 Socket.IO 通道控制。界面包括模式按钮、双摇杆、头和嘴的滑杆、Torque off、电量卡片和低电量提醒。
 - [ ] **3.4 设置页**：动作幅度、平滑等参数，通过 1.1 的配置接口保存在鸭子上。
@@ -133,6 +133,7 @@ App 和连接服务都要依赖这些功能，网页调试页也能直接受益�
 
 - [ ] 陀螺仪静止时有约 3°/s 的零偏（y、z 轴），代码没有做零偏校准。对策略影响不大（约 0.05 rad/s），但会让重力估计偏约 1°（零偏 × 重力 τ）。可以加开机静止标定。
 - [ ] 左膝（13 号）站立时和目标差约 9°，右膝（23 号）约 3°，方向相同（都是负载下沉），但左边大很多。先在舵机设置页比较两者的 KP；把鸭子拎起来空载时如果还差好几度，就是中位偏了，要重新 Reset Mid。
+- [ ] 连续重启 App 后，有时单片机不再发数据（状态里 `received` 一直是 0，舵机、IMU、电量都读不到），重新烧录也没用。按 README 的排错，`sudo systemctl restart arduino-router` 后再启动 App 就恢复了。2026-10-29 当天第一次重启正常，第二、三次出现。duck-connect 以后要能自动发现这种情况（启动后几秒内没有数据），并在有权限时自动重启 router。
 - [ ] 关节目标没有按模型范围限位：起身时颈部（30 号）被命令到约 −177°，实际转到 −150°，超出模型的 −135°。暂时不管；如果颈部舵机发烫或撞到身体，就在 `action_to_deg` 里按 xgoduck_rl 的关节范围限位。
 
 ## 待购硬件（Amazon.co.jp，2026-10-28 选定）
