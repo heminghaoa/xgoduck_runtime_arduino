@@ -244,7 +244,7 @@ usb_max_current_enable=1
   ```
 
   舵机模型现在是**占位**的：用 BAM 自带的 STS3215（7.4 V 版）参数，电压取 6～7 V，让堵转力矩落在 C018 标称的 30 kg·cm 左右。下面的辨识做完就换掉。
-- [ ] **把 xgoduck_rl 的 `big-duck` 分支弄到 4090 那台机器上**：它的 origin 是 LuwuDynamics 的原版，推不上去，要先在 GitHub 上 fork 一份再推。
+- [x] **xgoduck_rl 的 `big-duck` 分支已推到你的 fork** [heminghaoa/xgoduck_rl](https://github.com/heminghaoa/xgoduck_rl/tree/big-duck)（本地 remote 叫 `fork`；`origin` 还是 LuwuDynamics 原版，不往那边推）。4090 那台机器上：`git remote add fork https://github.com/heminghaoa/xgoduck_rl.git`，`git fetch fork`，`git switch big-duck`。
 - [ ] **起身任务**还没加；背包的碰撞盒已经放在全碰撞模型（`get_standup_spec`）里了。
 - [ ] **训练顺序**：站立 → 走路 → 起身，导出 ONNX。
 
