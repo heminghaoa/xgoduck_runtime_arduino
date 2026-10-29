@@ -55,16 +55,16 @@ function hmacSha256(key,msg){
 // Pair this browser with the sticker's link (xgoduck://pair?id=…&k=…) or bare key.
 async function xgoPair(secret,name){
   const key=(/[?&]k=([A-Za-z0-9_-]{22})/.exec(secret)||/^\s*([A-Za-z0-9_-]{22})\s*$/.exec(secret)||[])[1];
-  if(!key)throw new Error('Paste the pairing link from the sticker, or its 22-character key.');
+  if(!key)throw new Error(t('pair.badSecret'));
   const r=await xgoFetch('/api/pair/challenge'),c=await r.json();
-  if(!r.ok)throw new Error(c.detail||'challenge failed');
+  if(!r.ok)throw new Error(c.detail||t('pair.challengeFailed'));
   const id=(/[?&]id=([0-9A-F]{8})/.exec(secret)||[])[1];
-  if(id&&id!==c.id)throw new Error(`This sticker belongs to duck ${id}, not ${c.id}.`);
+  if(id&&id!==c.id)throw new Error(t('pair.wrongDuck',{id,current:c.id}));
   const enc=new TextEncoder(),mac=hmacSha256(enc.encode(key),enc.encode(`xgoduck-pair:${c.id}:${c.nonce}`));
   const proof=[...mac].map(b=>b.toString(16).padStart(2,'0')).join('');
   const p=await xgoFetch('/api/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nonce:c.nonce,proof,name})});
   const x=await p.json();
-  if(!p.ok)throw new Error(x.detail||'pairing failed');
+  if(!p.ok)throw new Error(x.detail||t('pair.failed'));
   xgoSetToken(x.token);
   return x;
 }

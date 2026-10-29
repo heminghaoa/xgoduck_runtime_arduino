@@ -36,8 +36,8 @@ let root=null, rootQuat=null, gravity=null, live=false;
 
 async function load(){
   const [model,bin]=await Promise.all([
-    fetch('model/model.json').then(r=>{if(!r.ok)throw new Error('model.json missing');return r.json();}),
-    fetch('model/model.bin').then(r=>{if(!r.ok)throw new Error('model.bin missing');return r.arrayBuffer();}),
+    fetch('model/model.json').then(r=>{if(!r.ok)throw new Error(t('view.missing',{file:'model.json'}));return r.json();}),
+    fetch('model/model.bin').then(r=>{if(!r.ok)throw new Error(t('view.missing',{file:'model.bin'}));return r.arrayBuffer();}),
   ]);
   const geoms=model.meshes.map(m=>{
     const q=new Int16Array(bin,m.offset,m.vertices*3), pos=new Float32Array(m.vertices*3);
@@ -92,8 +92,8 @@ async function load(){
   }
   $('legend').replaceChildren(...legend.map(p=>{
     const li=document.createElement('li'),dot=document.createElement('i'),b=document.createElement('b');
-    dot.style.background=p.color;b.textContent=p.label;
-    li.append(dot,b,document.createTextNode(' '+p.note));
+    dot.style.background=p.color;b.textContent=t('part.'+p.id,null,p.label);
+    li.append(dot,b,document.createTextNode(' '+t(`part.${p.id}.note`,null,p.note)));
     return li;
   }));
   const showParts=()=>{
@@ -111,18 +111,18 @@ function standPose(){for(const j of Object.values(joints))j.target=j.stand;gravi
 let polling=false;
 async function poll(){
   if(polling||document.hidden)return;
-  if(!$('live').checked){live=false;standPose();show('Showing the default pose');return;}
+  if(!$('live').checked){live=false;standPose();show(t('view.default'));return;}
   polling=true;
   try{
     const r=await fetch('/api/status');
-    if(!r.ok)throw new Error('status read failed');
+    if(!r.ok)throw new Error(t('error.status'));
     const s=await r.json();
     live=!!(s.angles&&s.feedback_age_ms!=null&&s.feedback_age_ms<500);
     if(live){
       s.motors.forEach((id,i)=>{if(joints[id])joints[id].target=s.angles[i]*Math.PI/180;});
       gravity=s.gravity?new THREE.Vector3(...s.gravity):null;
-      show(`Live · ${s.feedback_hz.toFixed(0)} Hz feedback · ${s.servo_ids.length}/15 servos`);
-    }else{standPose();show('No servo feedback: showing the default pose');}
+      show(t('view.liveStatus',{hz:s.feedback_hz.toFixed(0),n:s.servo_ids.length}));
+    }else{standPose();show(t('view.noFeedback'));}
   }catch(e){live=false;standPose();show(e.message);}
   finally{polling=false;}
 }
@@ -156,4 +156,4 @@ $('live').onchange=poll;
 
 load().then(()=>{
   resize();frame();poll();setInterval(poll,100);
-}).catch(e=>show(`3D model not loaded: ${e.message}`));
+}).catch(e=>show(t('view.notLoaded',{error:e.message})));

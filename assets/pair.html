@@ -1,43 +1,44 @@
 <!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pairing · XGO Duck</title><link rel="stylesheet" href="style.css?v=20261028-4">
+<title data-i18n="pair.pageTitle">Pairing · XGO Duck</title><link rel="stylesheet" href="style.css?v=20261029">
 <main class="page-pair">
 <header>
-  <div><small>ARDUINO UNO Q</small><h1>Pairing</h1></div>
+  <div><small>ARDUINO UNO Q</small><h1 data-i18n="nav.pair">Pairing</h1></div>
   <div class="header-actions">
-    <nav class="nav"><a href="/">Control</a><a href="/calibrate.html">Calibration</a><a href="/servo.html">Servo setup</a><a href="/pair.html" aria-current="page">Pairing</a><a href="/view3d.html">3D</a></nav>
+    <nav class="nav"><a href="/" data-i18n="nav.control">Control</a><a href="/calibrate.html" data-i18n="nav.calibrate">Calibration</a><a href="/servo.html" data-i18n="nav.servo">Servo setup</a><a href="/pair.html" aria-current="page" data-i18n="nav.pair">Pairing</a><a href="/view3d.html">3D</a></nav>
   </div>
 </header>
-<p id="message" role="status">Loading…</p>
+<p id="message" role="status" data-i18n="common.loading">Loading…</p>
 <section>
-  <h2>Duck ID <span id="duck-id">—</span></h2>
+  <h2><span data-i18n="pair.duckId">Duck ID</span> <span id="duck-id">—</span></h2>
   <div id="unclaimed" hidden>
     <figure class="sticker" id="sticker"><div id="qr"></div><figcaption><b>XGO Duck</b><span id="sticker-id"></span></figcaption></figure>
-    <div class="buttons"><button id="print">Print sticker</button><button id="claim">I have saved the sticker</button></div>
-    <p class="hint">The QR code holds this duck's ID and pairing key; the phone app will scan it to pair. Print sticker prints it 30 mm wide. Stick it under the duck or on the battery bracket.</p>
-    <p class="hint">Anyone on this network can open this page until you press I have saved the sticker. After that the duck never shows its pairing key over the network again.</p>
+    <div class="buttons"><button id="print" data-i18n="pair.print">Print sticker</button><button id="claim" data-i18n="pair.claim">I have saved the sticker</button></div>
+    <p class="hint" data-i18n="pair.stickerHint">The QR code holds this duck's ID and pairing key; the phone app will scan it to pair. Print sticker prints it 30 mm wide. Stick it under the duck or on the battery bracket.</p>
+    <p class="hint" data-i18n="pair.openHint">Anyone on this network can open this page until you press I have saved the sticker. After that the duck never shows its pairing key over the network again.</p>
   </div>
   <div id="claimed" hidden>
-    <p>The sticker is saved. The duck no longer shows its pairing key over the network.</p>
-    <p class="hint">Lost the sticker? Delete <code>data/identity.json</code> in the app folder on the board and restart the app. The duck gets a new ID and sticker, and the old sticker stops working.</p>
+    <p data-i18n="pair.claimed">The sticker is saved. The duck no longer shows its pairing key over the network.</p>
+    <p class="hint" data-i18n-html="pair.lostHint">Lost the sticker? Delete <code>data/identity.json</code> in the app folder on the board and restart the app. The duck gets a new ID and sticker, and the old sticker stops working.</p>
   </div>
 </section>
 <section>
-  <h2>Access <span id="access-state">—</span></h2>
-  <label class="mode-toggle"><input id="require" type="checkbox" role="switch" disabled>Require pairing on this network</label>
-  <p class="hint">When this is on, only paired phones and browsers can move the duck or change its settings; everyone else can still see its status. Turning it on needs this browser to be paired first. If you get locked out, delete <code>data/access.json</code> on the board and restart the app.</p>
-  <h3>This browser <span id="you">—</span></h3>
+  <h2><span data-i18n="pair.access">Access</span> <span id="access-state">—</span></h2>
+  <label class="mode-toggle"><input id="require" type="checkbox" role="switch" disabled><span data-i18n="pair.require">Require pairing on this network</span></label>
+  <p class="hint" data-i18n-html="pair.requireHint">When this is on, only paired phones and browsers can move the duck or change its settings; everyone else can still see its status. Turning it on needs this browser to be paired first. If you get locked out, delete <code>data/access.json</code> on the board and restart the app.</p>
+  <h3><span data-i18n="pair.thisBrowser">This browser</span> <span id="you">—</span></h3>
   <div class="pair-form" id="pair-form">
-    <label>Pairing link or key<input id="secret" autocomplete="off" spellcheck="false" placeholder="xgoduck://pair?id=…&amp;k=…"></label>
-    <label>Name<input id="client-name" value="Browser" maxlength="32"></label>
-    <button id="pair">Pair this browser</button>
+    <label><span data-i18n="pair.secret">Pairing link or key</span><input id="secret" autocomplete="off" spellcheck="false" placeholder="xgoduck://pair?id=…&amp;k=…"></label>
+    <label><span data-i18n="pair.name">Name</span><input id="client-name" value="Browser" maxlength="32" data-i18n-attr="value:pair.defaultName"></label>
+    <button id="pair" data-i18n="pair.pair">Pair this browser</button>
   </div>
-  <button id="unpair" hidden>Unpair this browser</button>
-  <p class="hint">Before the sticker is saved, Pair this browser works with the field empty. Afterwards, scan the sticker with the phone camera and paste the link it shows. Pairing is per address: opening the page at a new address needs pairing again.</p>
-  <h3>Paired phones and browsers</h3>
+  <button id="unpair" hidden data-i18n="pair.unpair">Unpair this browser</button>
+  <p class="hint" data-i18n="pair.pairHint">Before the sticker is saved, Pair this browser works with the field empty. Afterwards, scan the sticker with the phone camera and paste the link it shows. Pairing is per address: opening the page at a new address needs pairing again.</p>
+  <h3 data-i18n="pair.pairedList">Paired phones and browsers</h3>
   <ul class="paired" id="paired"></ul>
 </section>
 </main>
-<script src="auth.js?v=20261028"></script>
-<script src="pair.js?v=20261028-2"></script>
+<script src="i18n.js?v=20261029"></script>
+<script src="auth.js?v=20261029"></script>
+<script src="pair.js?v=20261029"></script>
 </html>

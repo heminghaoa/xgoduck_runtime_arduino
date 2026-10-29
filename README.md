@@ -8,6 +8,7 @@
 >
 > - **Calibration:** a zero-pose picture for every joint, rendered from the [xgoduck_rl](https://github.com/LuwuDynamics/xgoduck_rl) model (Apache-2.0).
 > - **Battery:** battery voltage and a low-battery reminder on the Control page.
+> - **Languages:** the web pages in English, Chinese and Japanese.
 >
 > Planned work, in Chinese: [docs/fork-roadmap.md](docs/fork-roadmap.md).
 
@@ -34,6 +35,12 @@ sudo bash tools/router-2m.sh
 Then click **Run** in App Lab. Repeat this preparation if the board's library cache is replaced. It configures the 2 Mbps connection required by this app.
 
 Connect the servo bus to **D0/D1** and the QMI8658 IMU to **D20/D21**.
+
+## Language
+
+The pages are available in English, Chinese and Japanese. Choose one in the menu at the top right of any page; the browser remembers it for every page. On the first visit the pages follow the browser's language. Messages that come from the duck itself, such as error details, stay in English.
+
+All page text is in `assets/i18n.js`, with the three languages side by side.
 
 ## Servo setup
 
