@@ -134,8 +134,8 @@ const I18N={
   'imu.tau':['Gravity projection τ (s)','重力投影 τ (秒)','重力投影 τ (秒)'],
   'imu.hint':[
     'Higher angular velocity α gives more smoothing; higher gravity τ slows accelerometer correction. Changes apply immediately and are saved on the duck.',
-    '角速度 α 越大，平滑越强；重力 τ 越大，加速度计的修正越慢。修改立即生效，并保存在鸭子上。',
-    '角速度 α を大きくすると平滑化が強くなり、重力 τ を大きくすると加速度計による補正が遅くなります。変更はすぐに適用され、ダックに保存されます。'],
+    '角速度 α 越大，陀螺仪读数越平滑，但反应越慢；重力 τ 越大，用加速度计校正身体倾斜的速度越慢，受晃动的影响也越小。松开滑块立即生效，并保存在鸭子上。',
+    '角速度 α を大きくするとジャイロの値がなめらかになりますが、反応は遅くなります。重力 τ を大きくすると、加速度計で体の傾きを補正する速さが遅くなり、揺れの影響を受けにくくなります。スライダーを離すとすぐに適用され、ダックに保存されます。'],
   'telemetry.title':['IMU and servos','IMU 与舵机','IMU とサーボ'],
   'telemetry.target':['Target','目标','目標'],
   'telemetry.waiting':['Waiting for command echo…','等待命令回显…','コマンドのエコー待ち…'],
