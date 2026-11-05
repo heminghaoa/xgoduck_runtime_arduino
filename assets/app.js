@@ -1,9 +1,11 @@
 const $=id=>document.getElementById(id);
 let statusBusy=false, commandBusy=false, commandPending=false, rollerBusy=false;
 let rollerEnabled=false;
+let sitstandPhase='idle', sitstandBusy=false, sitstandReady=false;
+let kickActive=false, kickBusy=false;
 const motionRanges={
-  walk:{backward:.2,strafe:.3,yaw:1,keyboard:[.2,.15,.5]},
-  roller:{backward:.4,strafe:0,yaw:.25,keyboard:[.4,0,.25]}
+  walk:{forward:.2,backward:.18,strafe:.3,yaw:1,keyboard:[.2,.15,.5]},
+  roller:{forward:.4,backward:.4,strafe:0,yaw:.25,keyboard:[.4,0,.25]}
 };
 for(let i=0;i<4;i++) $('head-controls').insertAdjacentHTML('beforeend',`<label>${t('head.joint',{n:i+1})}<input id="head${i}" type="range" min="-1" max="1" value="0" step="0.02"></label>`);
 $('head-controls').insertAdjacentHTML('beforeend',`<label>${t('head.mouth')}<input id="mouth" type="range" min="0" max="30" value="0" step="1"></label>`);
@@ -18,7 +20,7 @@ function showRoller(enabled){
   $('roller-warning').hidden=!enabled;
   $('action-profile').textContent=t(enabled?'action.roller':'action.walk');
   const limits=motionRanges[enabled?'roller':'walk'];
-  $('motion-limits').textContent=t('motion.limits',{back:limits.backward,strafe:limits.strafe?'±'+limits.strafe:'0',yaw:limits.yaw});
+  $('motion-limits').textContent=t('motion.limits',{back:limits.backward,forward:limits.forward,strafe:limits.strafe?'±'+limits.strafe:'0',yaw:limits.yaw});
   $('left-label').textContent=t(enabled?'motion.leftRoller':'motion.leftWalk');
   if(changed)zero(false);
 }
@@ -42,17 +44,69 @@ $('roller-mode').onchange=async()=>{
 };
 $('pick').onclick=async()=>{try{const r=await post('pick',{});$('message').textContent=t('msg.pick',{model:r.model});}catch(e){showError(e);}};
 $('roulade').onclick=async()=>{try{const r=await post('roulade',{});$('message').textContent=t('msg.roulade',{model:r.model});}catch(e){showError(e);}};
+function showKick(state){
+  const active=!!state?.active;
+  if(active!==kickActive)zero(false);
+  kickActive=active;
+  for(const side of ['left','right'])$(side+'_kick').disabled=kickBusy||active;
+  document.querySelectorAll('#head-controls input').forEach(input=>{
+    input.disabled=active;
+    if(active)input.value=0;
+  });
+  if(active){
+    document.querySelector('[data-mode="policy"]').disabled=true;
+    $('pick').disabled=$('roulade').disabled=$('sitstand').disabled=true;
+    $('roller-mode').disabled=true;
+  }
+}
+for(const side of ['left','right'])$(side+'_kick').onclick=async()=>{
+  if(kickBusy||kickActive)return;
+  kickBusy=true;
+  for(const foot of ['left','right'])$(foot+'_kick').disabled=true;
+  try{
+    showKick(await post(side+'_kick',{}));
+    $('message').textContent=t('msg.kick',{name:t('kick.'+side)});
+  }catch(e){showError(e);}
+  finally{
+    kickBusy=false;
+    for(const foot of ['left','right'])$(foot+'_kick').disabled=kickActive;
+  }
+};
+function showSitstand(state){
+  const phase=state?.phase||'idle';
+  if(phase!==sitstandPhase)zero(false);
+  sitstandPhase=phase;
+  $('sitstand').textContent=t(phase==='idle'?'control.sit':'control.stand');
+  $('sitstand').disabled=sitstandBusy||phase==='stand'||!sitstandReady||kickActive;
+  if(phase!=='idle'){
+    document.querySelector('[data-mode="policy"]').disabled=true;
+    $('pick').disabled=$('roulade').disabled=true;
+    $('roller-mode').disabled=true;
+  }
+}
+$('sitstand').onclick=async()=>{
+  if(sitstandBusy||sitstandPhase==='stand'||!sitstandReady)return;
+  const action=sitstandPhase==='sit'?'stand':'sit';
+  sitstandBusy=true;showSitstand({phase:sitstandPhase});
+  try{
+    const r=await post('sitstand',{action});showSitstand(r);
+    $('message').textContent=action==='sit'?t('msg.sit'):t('msg.stand',{s:r.stand_seconds});
+  }catch(e){showError(e);}
+  finally{sitstandBusy=false;showSitstand({phase:sitstandPhase});}
+};
 $('stop').onclick=()=>{zero();setMode('off')};
 const keys=new Set(), sticks={left:{x:0,y:0},right:{x:0,y:0}}, resetSticks=[];
 let motion=[0,0,0], targetMotion=[0,0,0];
 const deadzone=v=>Math.abs(v)<=.15?0:v;
 function updateMotion(){
+  if(kickActive){targetMotion=[0,0,0];return;}
   const key=(a,b)=>keys.has(a)-keys.has(b);
   const limits=motionRanges[rollerEnabled?'roller':'walk'];
   const forward=deadzone(sticks.left.y);
-  targetMotion=[keys.has('w')||keys.has('s')?key('w','s')*limits.keyboard[0]:forward*(forward<0?limits.backward:.4),
+  targetMotion=[keys.has('w')||keys.has('s')?key('w','s')*limits.keyboard[0]:forward*(forward<0?limits.backward:limits.forward),
     keys.has('a')||keys.has('d')?key('a','d')*limits.keyboard[1]:deadzone(-sticks.left.x)*limits.strafe,
     keys.has('q')||keys.has('e')?key('q','e')*limits.keyboard[2]:deadzone(-sticks.right.x)*limits.yaw];
+  targetMotion[0]=Math.max(-limits.backward,Math.min(limits.forward,targetMotion[0]));
 }
 function showMotion(){
   ['vx','vy','wz'].forEach((id,i)=>$(id+'Value').textContent=motion[i].toFixed(2));
@@ -60,7 +114,7 @@ function showMotion(){
 async function sendCommand(){
   if(commandBusy){commandPending=true;return;}
   commandBusy=true;commandPending=false;
-  motion=motion.map((old,i)=>.3*old+.7*targetMotion[i]);
+  motion=motion.map((old,i)=>.75*old+.25*targetMotion[i]);
   showMotion();
   try{await post('command',{twist:[...motion],head:[0,1,2,3].map(i=>+$('head'+i).value),mouth:+$('mouth').value});}
   catch(e){showError(e);}
@@ -118,20 +172,28 @@ window.addEventListener('pagehide',()=>{
   xgoBeacon('/api/command',{twist:[0,0,0]});
 });
 setInterval(()=>{if(!document.hidden&&!commandBusy)sendCommand();},50);
-setInterval(async()=>{if(statusBusy||document.hidden)return;statusBusy=true;try{const r=await fetch('/api/status');if(!r.ok)throw new Error(t('error.status'));const s=await r.json();$('rx').textContent=s.feedback_hz.toFixed(1)+' Hz';$('rl').textContent=s.inference_hz.toFixed(1)+' Hz';$('servos').textContent=(s.servo_ids?.length||0)+'/15';$('imu').textContent=t(s.imu_ok?'status.online':'status.offline');$('mode').textContent=t('modeLabel.'+s.mode,null,s.mode)+t(s.enabled?'status.enabled':'status.torqueOff');$('message').textContent=s.last_error||s.settings_error||t('status.bridge',{mbps:(s.bridge_baud/1e6).toFixed(0),age:(s.feedback_age_ms||0).toFixed(1)});
+setInterval(async()=>{if(statusBusy||document.hidden)return;statusBusy=true;try{const r=await fetch('/api/status');if(!r.ok)throw new Error(t('error.status'));const s=await r.json();$('rx').textContent=s.feedback_hz.toFixed(1)+' Hz';$('rl').textContent=s.inference_hz.toFixed(1)+' Hz';$('servos').textContent=(s.servo_ids?.length||0)+'/15';$('imu').textContent=t(s.imu_ok?'status.online':'status.offline');$('mode').textContent=(s.left_kick?.active?t('kick.left'):s.right_kick?.active?t('kick.right'):s.sitstand?.active?t('phase.'+s.sitstand.phase,null,s.sitstand.phase):t('modeLabel.'+s.mode,null,s.mode))+t(s.enabled?'status.enabled':'status.torqueOff');$('message').textContent=s.last_error||s.settings_error||t('status.bridge',{mbps:(s.bridge_baud/1e6).toFixed(0),age:(s.feedback_age_ms||0).toFixed(1)});
 showBattery(s.battery);
 $('pairing-warning').hidden=!(s.access&&s.access.require_pairing&&!s.access.paired);
 document.querySelectorAll('[data-mode="hold"],[data-mode="policy"]').forEach(b=>b.disabled=!s.control_ready);
 if(s.roller&&!rollerBusy)showRoller(s.roller.enabled);
 if(!rollerBusy)showActionSettings(s.deployment);
 imuFilters.forEach(([id,key])=>{if(document.activeElement!==$(id)){$(id).value=s.deployment[key];$(id+'-value').textContent=(+$(id).value).toFixed(2);}});
-const recovery=s.recovery, pick=s.pick, roulade=s.roulade;
+const recovery=s.recovery, pick=s.pick, roulade=s.roulade, sitstand=s.sitstand, rightKick=s.right_kick;
+const kick=s.left_kick?.active?s.left_kick:rightKick;
+const sitActive=!!sitstand?.active, kickRunning=!!kick?.active;
+sitstandReady=!!sitstand&&!!s.control_ready&&recovery?.phase==='walk'&&!pick?.active&&!roulade?.active&&!kickRunning;
+showSitstand(sitstand);
+showKick(kick);
+document.querySelector('[data-mode="policy"]').disabled=!s.control_ready||sitActive||kickRunning;
+$('roller-mode').disabled=rollerBusy||sitActive||kickRunning;
 const upright=(s.mode==='shadow'||s.mode==='policy')&&recovery&&recovery.active&&recovery.phase==='walk';
-$('pick').disabled=!upright||(pick&&pick.active)||(roulade&&roulade.active);
+$('pick').disabled=sitActive||kickRunning||!upright||(pick&&pick.active)||(roulade&&roulade.active);
 $('roulade').disabled=$('pick').disabled;
-if(recovery){const phaseLabel=roulade&&roulade.active?t('phase.roulade'):pick&&pick.active?t('phase.pick'):t('phase.'+recovery.phase,null,recovery.phase);
+for(const side of ['left','right'])$(side+'_kick').disabled=kickBusy||!s[side+'_kick']||!s.control_ready||$('pick').disabled;
+if(recovery){const phaseLabel=kickRunning?t('kick.'+kick.side):sitActive?t('phase.'+sitstand.phase,null,sitstand.phase):roulade&&roulade.active?t('phase.roulade'):pick&&pick.active?t('phase.pick'):t('phase.'+recovery.phase,null,recovery.phase);
 $('recovery-phase').textContent=recovery.active?phaseLabel:t('phase.idle');$('active-model').textContent=s.active_model||'—';$('tilt-angle').textContent=recovery.angle_deg==null?'—':recovery.angle_deg.toFixed(1)+'°';
-$('recovery-timer').textContent=!recovery.active?'—':roulade&&roulade.active?t('timer.roulade',{left:roulade.remaining_s.toFixed(2),total:roulade.seconds.toFixed(2)}):pick&&pick.active?t('timer.pick',{phi:pick.phi.toFixed(2)}):recovery.phase==='default_pose'?t('timer.hold',{left:recovery.hold_remaining_s.toFixed(2)}):recovery.phase==='getup'?t('timer.upright',{t:recovery.stand_elapsed_s.toFixed(2)}):t('timer.fallen',{t:recovery.fall_elapsed_s.toFixed(2)});
+$('recovery-timer').textContent=!recovery.active?'—':kickRunning?t('timer.kick',{name:t('kick.'+kick.side),left:kick.remaining_s.toFixed(2)}):sitActive?(sitstand.phase==='sit'?t('timer.sit'):t('timer.stand',{left:sitstand.remaining_s.toFixed(2)})):roulade&&roulade.active?t('timer.roulade',{left:roulade.remaining_s.toFixed(2),total:roulade.seconds.toFixed(2)}):pick&&pick.active?t('timer.pick',{phi:pick.phi.toFixed(2)}):recovery.phase==='default_pose'?t('timer.hold',{left:recovery.hold_remaining_s.toFixed(2)}):recovery.phase==='getup'?t('timer.upright',{t:recovery.stand_elapsed_s.toFixed(2)}):t('timer.fallen',{t:recovery.fall_elapsed_s.toFixed(2)});
 if(pick&&pick.active)$('mouth').value=Math.round(s.mouth||0);}
 for(const [id,values]of [['acc-values',s.acc],['gyro-values',s.gyro],['gravity-values',s.gravity]])$(id).textContent=values?values.map(x=>x.toFixed(3)).join(' / '):'—';
 $('command-health').textContent=t('telemetry.health',{sent:s.sent,echo:s.mcu_command_seq??'—',age:s.mcu_command_age_us<1e9?(s.mcu_command_age_us/1000).toFixed(1)+' ms':'—',gaps:s.sequence_gaps,rejected:s.mcu_invalid_commands??0});
