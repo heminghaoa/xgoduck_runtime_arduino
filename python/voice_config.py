@@ -9,6 +9,30 @@ from app_paths import DATA
 
 CONFIG_PATH = DATA / 'voice_config.json'
 WAKE_MODELS = Path(__file__).with_name('models')
+# DRADUCK's Japanese wake words, trained like xiaoya.onnx (livekit-wakeword, same frontends), as
+# (phrase, model, threshold); provenance/draduck-*-wakeword.json has how each was made and tested.
+# - nee (default): trained on 「ねえ、ドラダック」; also answers 「ドラダック」 alone, and had the fewest
+#   false wakes of the three.
+# - strict: answers only 「ねえ、ドラダック」, at the cost of more misses and false wakes.
+# - short: trained on 「ドラダック」.
+DRADUCK_WAKE = {
+    'nee': ('ねえ、ドラダック', 'draduck_nee.onnx', .50),
+    'strict': ('ねえ、ドラダック', 'draduck_nee_strict.onnx', .50),
+    'short': ('ドラダック', 'draduck_short.onnx', .70),
+}
+# The choice lives in its own file, not in voice_config.json: Luwu's app drops that whole file when
+# it meets a field it does not know, which would lose the cloud settings after a downgrade.
+DRADUCK_SETTINGS = DATA / 'draduck.json'
+
+
+def draduck_wake_choice(path=None):
+    try:
+        choice = json.loads(Path(path or DRADUCK_SETTINGS).read_text()).get('wake')
+    except (OSError, ValueError, AttributeError):
+        choice = None
+    return choice if choice in DRADUCK_WAKE else 'nee'
+
+
 DEFAULTS = dict(enabled=True, language='cn', enable_wakeword=True, enable_aec=False,
                 input_device=None, output_device=None,
                 voice_motion_enabled=False,  # Legacy setting kept for downgrade compatibility.
@@ -20,6 +44,16 @@ DEFAULTS = dict(enabled=True, language='cn', enable_wakeword=True, enable_aec=Fa
 
 def wake_profile(config):
     """Choose the phrase and detector settings for the same voice session."""
+    if config.get('ota_url'):
+        # DRADUCK: a custom (our own Japanese) voice server answers to 「ねえ、ドラダック」, or to
+        # 「ドラダック」 when data/draduck.json says {"wake": "short"}; the other model stands in
+        # if the chosen one is not installed.
+        choice = draduck_wake_choice()
+        for key in (choice, *(k for k in DRADUCK_WAKE if k != choice)):
+            phrase, model, threshold = DRADUCK_WAKE[key]
+            if (WAKE_MODELS / model).is_file():
+                return phrase, dict(shared_capture=True, model_path=str(WAKE_MODELS / model),
+                                    threshold=threshold, input_scale=1., stride_duration=.08, cooldown_sec=2.)
     region = None if config.get('ota_url') else config.get('cloud_region')
     if region == 'global':
         phrase, model = 'Hey Ducky', 'hey_ducky.onnx'
