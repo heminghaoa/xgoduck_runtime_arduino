@@ -1044,4 +1044,27 @@ document.addEventListener('DOMContentLoaded',()=>{
   bar.append(picker);
   document.querySelector('main')?.prepend(bar);
 });
+
+// DRADUCK voice (AI): a duck with the DRADUCK Japanese version talks to our own voice server, set up on the duck's
+// voice page (draduck_companion, port 9540: web/voice.html) with an account on our website, not on the platforms
+// the cockpit's AI dialog offers. A block at the top of that dialog leads there; Luwu's choices below stay as they are.
+document.addEventListener('DOMContentLoaded',()=>{
+  const body=document.querySelector('#bindingDialog .binding-body');
+  if(!body||document.getElementById('draduckVoice'))return;
+  const [title,intro,button]={
+    en:['DRADUCK voice (AI)','Talk with your duck in Japanese on the DRADUCK voice server. Add the duck to My Duck on the website; the next page gets the code from the duck for you.','Use voice (AI)'],
+    zh:['DRADUCK 语音（AI）','使用 DRADUCK 的语音服务器，用日语和鸭子对话。在网站的「マイダック」添加鸭子即可，代码由下一页从鸭子获取。','使用语音（AI）'],
+    ja:['DRADUCK の音声（AI）','DRADUCK の音声サーバーで、ダックと日本語で話せます。ウェブサイトのマイダックにダックを追加するだけで、コードは次の画面がダックから受け取ります。','音声（AI）を使う']}[lang];
+  const style=document.createElement('style');
+  style.textContent='.draduck-voice{margin:4px 0 18px;padding:16px;border:1px solid #2f6b55;border-radius:12px;background:#143028}'
+    +'.draduck-voice h3{margin:0 0 6px;font-size:16px}.draduck-voice p{margin:0 0 12px;font-size:13px;line-height:1.65}'
+    +'.draduck-voice a{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:8px;background:#8ce2cc;color:#0b121a;font-weight:600;text-decoration:none}';
+  document.head.append(style);
+  const block=document.createElement('section'),heading=document.createElement('h3'),text=document.createElement('p'),link=document.createElement('a');
+  block.id='draduckVoice';block.className='draduck-voice';
+  heading.textContent=title;text.textContent=intro;link.textContent=button;
+  link.href=location.protocol+'//'+location.hostname+':9540/voice.html?lang='+lang;
+  block.append(heading,text,link);
+  body.prepend(block);
+});
 })();
