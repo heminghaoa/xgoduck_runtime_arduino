@@ -1047,7 +1047,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 // DRADUCK voice (AI): a duck with the DRADUCK Japanese version talks to our own voice server, set up on the duck's
 // voice page (draduck_companion, port 9540: web/voice.html) with an account on our website, not on the platforms
-// the cockpit's AI dialog offers. A block at the top of that dialog leads there; Luwu's choices below stay as they are.
+// the cockpit's AI dialog offers. A block at the top of that dialog leads there, and the dialog shows only that
+// (owner, 2026-11-20: 「默认只有我们这一个选项」): Luwu's region cards, which would move the duck to Luwu's servers,
+// and the text about them are hidden with CSS. They stay in the page for Luwu's scripts, so nothing breaks.
 document.addEventListener('DOMContentLoaded',()=>{
   const body=document.querySelector('#bindingDialog .binding-body');
   if(!body||document.getElementById('draduckVoice'))return;
@@ -1058,7 +1060,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   const style=document.createElement('style');
   style.textContent='.draduck-voice{margin:4px 0 18px;padding:16px;border:1px solid #2f6b55;border-radius:12px;background:#143028}'
     +'.draduck-voice h3{margin:0 0 6px;font-size:16px}.draduck-voice p{margin:0 0 12px;font-size:13px;line-height:1.65}'
-    +'.draduck-voice a{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:8px;background:#8ce2cc;color:#0b121a;font-weight:600;text-decoration:none}';
+    +'.draduck-voice a{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:8px;background:#8ce2cc;color:#0b121a;font-weight:600;text-decoration:none}'
+    +'#bindingIntro,#bindingDialog .binding-device,#bindingDialog .binding-server-options,#regionMessage,'
+    +'#bindingDialog .binding-steps,#bindingDialog .binding-startup,#bindingDialog .binding-note,#bindingDialog .binding-browser,'
+    +'#bindingRegionChip{display:none!important}';
   document.head.append(style);
   const block=document.createElement('section'),heading=document.createElement('h3'),text=document.createElement('p'),link=document.createElement('a');
   block.id='draduckVoice';block.className='draduck-voice';
