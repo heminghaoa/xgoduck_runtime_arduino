@@ -503,6 +503,26 @@ const D=[
 ['From the front, the head is level: not tilted to the left or right.','从正面看，头摆正，不向左歪也不向右歪。','正面から見て、頭が左右どちらにも傾いていない状態にします。'],
 ['Gently close the mouth to its natural closed position along the dashed mouth line. Do not squeeze the shell.','把嘴轻轻合到自然闭合位置，对齐图示嘴缝，不要用力挤压外壳。','くちばしを、点線で示した合わせ目に沿って自然に閉じた位置までそっと閉じます。シェルを強く押さないでください。'],
 ['{a} · ID {#b} · {c}','{a} · ID {b} · {c}','{a} · ID {b} · {c}'],
+// The control page (9527): 0.3.6's rear-cover reminder before the first drive, and IMU and action messages.
+['We recommend fitting the rear protective cover before driving','遥控前建议安装后部保护壳','動かす前に、背面の保護カバーを付けることをおすすめします'],
+['Duck may fall or collide with objects during remote control. An impact can damage the exposed board.','小鸭在遥控过程中若跌倒或发生碰撞，裸露的开发板可能因直接撞击而受损。','操作中にダックが転んだり物にぶつかったりすると、むき出しの基板が衝撃で壊れることがあります。'],
+['Got it','知道了','わかりました'],
+['Request failed.','请求失败。','リクエストに失敗しました。'],
+['Could not read robot status.','无法读取机器人状态。','ダックの状態を読み取れません。'],
+['Calibration cancelled. Previous calibration kept.','标定已取消，保留之前的标定。','キャリブレーションを取り消しました。前回のキャリブレーションはそのままです。'],
+['Stop motion and hold the board upright and still.','请停止动作，让板子保持竖直并静止。','動作を止め、基板を立てたまま動かさないでください。'],
+['Wait for the current action to finish before calibrating.','请等待当前动作结束后再标定。','実行中の動作が終わってからキャリブレーションしてください。'],
+['The IMU restarted. Try again.','IMU 已重启，请重试。','IMU が再起動しました。もう一度試してください。'],
+['Not enough IMU readings. Check the connection and try again.','IMU 读数不足，请检查连接后重试。','IMU の読み取り値が足りません。接続を確かめて、もう一度試してください。'],
+['Not enough IMU readings. Keep the board still and try again.','IMU 读数不足，请保持板子静止后重试。','IMU の読み取り値が足りません。基板を動かさずに、もう一度試してください。'],
+['Unexpected acceleration. Keep the board still and try again.','检测到意外加速度，请保持板子静止后重试。','想定外の加速度を検出しました。基板を動かさずに、もう一度試してください。'],
+['Calibration cancelled because the control mode changed.','控制模式已切换，标定已取消。','制御モードが変わったため、キャリブレーションを取り消しました。'],
+['Calibration cancelled because the app stopped.','应用已停止，标定已取消。','アプリが停止したため、キャリブレーションを取り消しました。'],
+['App stopped. Calibration cancelled.','应用已停止，标定已取消。','アプリが停止しました。キャリブレーションを取り消しました。'],
+['Stop motion before resetting IMU calibration.','请先停止动作，再重置 IMU 标定。','IMU のキャリブレーションをリセットする前に、動作を止めてください。'],
+['Could not reset calibration. Previous calibration kept.','无法重置标定，保留之前的标定。','キャリブレーションをリセットできませんでした。前回のキャリブレーションはそのままです。'],
+['Action preparation timed out; action cancelled.','动作准备超时，已取消。','動作の準備が時間内に終わらず、取り消しました。'],
+['Roulade start timed out; action cancelled.','翻滚启动超时，已取消。','前転を時間内に始められず、取り消しました。'],
 ];
 const pick=code=>Object.keys(LANGS).find(l=>String(code||'').toLowerCase().startsWith(l));
 let saved=null;
