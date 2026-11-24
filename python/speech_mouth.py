@@ -15,6 +15,9 @@ OUTPUT_HZ = 50
 WINDOWS_MS = (25, 120, 300)
 ONSET_GAIN = .7
 MEDIUM_GAIN = .35
+# DRADUCK: the opening is scaled up (on a real duck the mouth barely moved: steady speech opened it about
+# a third of the way, 8-10 degrees). 1.0 is Luwu's own behaviour; the result still stops at MAX_DEGREES.
+OPEN_GAIN = 1.6
 MOUTH_ADVANCE_S = .100
 
 
@@ -88,6 +91,7 @@ class MouthEnvelope:
             self.voice = max(0., min(1., (short - .006) / .012))
             opening = self.voice * max(0., min(1., .08 + .27 * self.base
                 + ONSET_GAIN * self.onset + MEDIUM_GAIN * self.medium_change))
+            opening = min(1., opening * OPEN_GAIN)
             self.target = target = MIN_DEGREES + (MAX_DEGREES - MIN_DEGREES) * opening
             alpha = 1 - math.exp(-dt / (.025 if target > self.angle else .070))
             limit = MAX_SPEED_DPS * dt

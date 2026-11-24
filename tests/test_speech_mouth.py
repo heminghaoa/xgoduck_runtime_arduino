@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'python'))
-from speech_mouth import MIN_DEGREES, MAX_DEGREES, MouthEnvelope, SpeechMouthPublisher
+from speech_mouth import MIN_DEGREES, MAX_DEGREES, OPEN_GAIN, MouthEnvelope, SpeechMouthPublisher
 from local_ipc import JsonServer, request
 from voice_application import application_type
 import test_voice_motion as motion_fixture
@@ -53,7 +53,8 @@ class MouthEnvelopeTest(unittest.TestCase):
                 points = MouthEnvelope().analyse(tone(amplitude, seconds=2.), 16000)
                 steady = [v for t, v in points if t >= .5]
                 self.assertLess(max(steady) - min(steady), .05)
-                self.assertAlmostEqual(sum(steady)/len(steady), 8.55, delta=.05)
+                # 35 percent of the range in Luwu's tuning (8.55 degrees), times DRADUCK's OPEN_GAIN.
+                self.assertAlmostEqual(sum(steady)/len(steady), MIN_DEGREES+(MAX_DEGREES-MIN_DEGREES)*min(1,.35*OPEN_GAIN), delta=.05)
 
     def test_syllable_onset_opens_more_and_silence_does_not_use_long_window_energy(self):
         envelope = MouthEnvelope()
@@ -124,7 +125,7 @@ class MouthEnvelopeTest(unittest.TestCase):
             energy=sample/32768
             voice=max(0,min(1,(energy-.006)/.012))
             base=min(1,energy/max(energy,.015))
-            expected=MIN_DEGREES+(MAX_DEGREES-MIN_DEGREES)*voice*(.08+.27*base)
+            expected=MIN_DEGREES+(MAX_DEGREES-MIN_DEGREES)*min(1,voice*(.08+.27*base)*OPEN_GAIN)
             self.assertAlmostEqual(envelope.target,expected,places=10)
             self.assertAlmostEqual(envelope.angle,expected,delta=.02)
             self.assertEqual(envelope.onset,0)

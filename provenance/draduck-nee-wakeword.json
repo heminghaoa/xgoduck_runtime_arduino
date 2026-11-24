@@ -21,7 +21,7 @@
     "sample_rate": 16000,
     "window_seconds": 2,
     "input_scale": 1.0,
-    "threshold": 0.5,
+    "threshold": 0.3,
     "stride_seconds": 0.08,
     "cooldown_seconds": 2,
     "frontends": {
@@ -42,7 +42,9 @@
     },
     "stream_test_2026_11_13": "Luwu wakeword_manager code on the shared cached audio: at 0.5-0.7, ねえ、ドラダック 30/30, ドラダック alone 30/30, 0 false wakes in 7.6 min family talk and 3.8 min packed near misses",
     "note": "Wakes on ドラダック alone too: the trainer centres negatives, so a centred ドラダック never looks like the end of the phrase.",
-    "not_yet": "real voices (adults, children) through the duck's own microphone"
+    "not_yet": "real voices (adults, children) through the duck's own microphone",
+    "stream_test_2026_11_24": "same code and audio at 0.25-0.5: ねえ、ドラダック 30/30 and ドラダック alone 30/30 at every threshold; false wakes 0 in 7.6 min family talk at all; in 3.8 min packed near misses 1 at 0.25 and 0.30 (heard as 空をラックシュフートが), 0 at 0.35 and above",
+    "real_voice_2026_11_24": "a Mandarin-speaking tester's 「ねえ、ドラダック」 on the lab duck (webcam microphone, input gain 12 dB): live peaks 0.14, 0.17, 0.20, 0.29, 0.42, 0.51; a 60 s take of three tries on the duck's microphone (about 10 dB above room noise, no clipping) scored 0.49, 0.33, 0.35, and SenseVoice heard them as Chinese and Korean words, not as the phrase; the synthetic test clip played from a phone 0.90-0.97. Threshold lowered from 0.5 to 0.35, then 0.30; the lasting fix is real and varied voices in training"
   },
   "trained": "2026-11-13 on an RTX 5090"
 }

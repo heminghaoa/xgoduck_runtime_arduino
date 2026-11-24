@@ -4,7 +4,9 @@ import contextlib
 import time
 
 KINDS = {'network': 'greet', 'binding_required': 'speech', 'voice_service': 'wheee'}
-SOFTWARE_GAIN = 3.
+# Startup cues play at the duck's normal volume. Luwu boosts them 3x, which clips and is far
+# louder than speech; DRADUCK boots more quietly (2026-11-24).
+SOFTWARE_GAIN = 1.
 
 
 class ConnectionSounds:

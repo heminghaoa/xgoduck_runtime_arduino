@@ -11,7 +11,7 @@ import wave
 from zipfile import ZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'python'))
-from connection_sounds import ConnectionSounds
+from connection_sounds import ConnectionSounds, SOFTWARE_GAIN
 from voice_config import VoiceConfig
 from voice_process import Runtime
 from duck_sound import amplify_sound
@@ -37,8 +37,8 @@ class ConnectionSoundTest(unittest.IsolatedAsyncioTestCase):
         for _ in range(5):
             await self.poll(False, False)
             await self.poll(True, True)
-        self.assertEqual(self.play.call_args_list, [unittest.mock.call('network', 'greet', 3.),
-                                                   unittest.mock.call('voice_service', 'wheee', 3.)])
+        self.assertEqual(self.play.call_args_list, [unittest.mock.call('network', 'greet', SOFTWARE_GAIN),
+                                                   unittest.mock.call('voice_service', 'wheee', SOFTWARE_GAIN)])
         self.assertEqual(self.cues.status()['completed'], ['network', 'voice_service'])
 
     async def test_confirmed_cloud_can_prove_network_but_not_reverse(self):
@@ -54,9 +54,9 @@ class ConnectionSoundTest(unittest.IsolatedAsyncioTestCase):
         await self.poll(True, False, binding_required=True)
         await self.poll(True, False, binding_required=True)
         await self.poll(True, True)
-        self.assertEqual(self.play.call_args_list, [unittest.mock.call('network', 'greet', 3.),
+        self.assertEqual(self.play.call_args_list, [unittest.mock.call('network', 'greet', SOFTWARE_GAIN),
                                                    unittest.mock.call('binding_required', 'speech', 1.),
-                                                   unittest.mock.call('voice_service', 'wheee', 3.)])
+                                                   unittest.mock.call('voice_service', 'wheee', SOFTWARE_GAIN)])
 
     async def test_missing_audio_retries_later_without_claiming_success(self):
         self.play.return_value = False
