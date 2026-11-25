@@ -1,6 +1,6 @@
 {
   "wake_phrase": "ねえ、ドラダック",
-  "used_when": "voice_config ota_url is set (our own DRADUCK voice server); the default DRADUCK wake word",
+  "used_when": "data/draduck.json {\"wake\": \"nee1\"}; the default until 2026-11-25, when nee4 took its place (the owner's real voice through the lab duck's microphone scored 0.00-0.29 on it)",
   "trainer": {
     "name": "livekit-wakeword",
     "commit": "95448a7559c453fcd87645bd67b247ffb45f85b0",

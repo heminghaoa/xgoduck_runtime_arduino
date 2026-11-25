@@ -11,20 +11,22 @@ CONFIG_PATH = DATA / 'voice_config.json'
 WAKE_MODELS = Path(__file__).with_name('models')
 # DRADUCK's Japanese wake words, trained like xiaoya.onnx (livekit-wakeword, same frontends), as
 # (phrase, model, threshold); provenance/draduck-*-wakeword.json has how each was made and tested.
-# - nee (default): trained on 「ねえ、ドラダック」; also answers 「ドラダック」 alone, and had the fewest
-#   false wakes of the three.
-#   Threshold .30 since 2026-11-24: a tester's real voice through the duck's microphone scored 0.14-0.51
-#   (synthetic clips 0.90-0.97). The shared test audio had 0 false wakes at .35 and one near miss at .30
-#   (「ダックスフント」 in 3.8 min of packed near misses; none in 7.6 min of family talk).
+# - nee (default): 「ねえ、ドラダック」 with the nee4 model since 2026-11-25 (owner: 「改用 nee4」). Through the lab
+#   duck's microphone the owner's eleven real calls scored 0.00-0.29 on the first model (none heard; a tester's
+#   voice the day before 0.14-0.51) and woke nee4 nine times, nee3 ten; in 35 minutes of that room the first
+#   model woke twice on Mandarin talk, nee4 and nee3 never (all with the guards below). nee4 was also trained
+#   on Mandarin, English and Korean voices and on 「ねえ、…」 near misses; in clean synthetic tests it still
+#   wakes on 8% of such near-miss clips (the first model 0%, nee3 14%), see its provenance.
+# - nee1: the first model (the default until 2026-11-25); also answers 「ドラダック」 alone. Threshold .30.
 # - strict: answers only 「ねえ、ドラダック」, at the cost of more misses and false wakes.
 # - short: trained on 「ドラダック」.
+# - nee3: nee4 without the near-miss negatives. nee4: the same model as nee, by its own name.
 DRADUCK_WAKE = {
-    'nee': ('ねえ、ドラダック', 'draduck_nee.onnx', .30),
+    'nee': ('ねえ、ドラダック', 'draduck_nee4.onnx', .35),
+    'nee1': ('ねえ、ドラダック', 'draduck_nee.onnx', .30),
     'strict': ('ねえ、ドラダック', 'draduck_nee_strict.onnx', .50),
     'short': ('ドラダック', 'draduck_short.onnx', .70),
-    # nee3 (lab trial 2026-11-24): also trained on Mandarin, English and Korean voices; see its provenance.
     'nee3': ('ねえ、ドラダック', 'draduck_nee3.onnx', .35),
-    # nee4: nee3 plus 「ねえ、…」 near-miss negatives; about half of nee3's false wakes on them in tests.
     'nee4': ('ねえ、ドラダック', 'draduck_nee4.onnx', .35),
 }
 # False wakes (owner 2026-11-25: the lab duck woke three times in half an hour with nobody speaking, twice

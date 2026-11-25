@@ -21,8 +21,8 @@ def main():
     parser.add_argument('--aec-output-headroom-db', type=float,
                         help='0–18 dB quieter playback during full-duplex AEC only; default 0')
     parser.add_argument('--draduck-wake', choices=sorted(DRADUCK_WAKE),
-                        help='Wake word with a custom (DRADUCK) server: nee = ねえ、ドラダック, also ドラダック (default); '
-                             'strict = only ねえ、ドラダック; short = ドラダック')
+                        help='Wake word with a custom (DRADUCK) server: nee = ねえ、ドラダック (default; the nee4 model); '
+                             'nee1 = the first model; strict = only ねえ、ドラダック; short = ドラダック')
     parser.add_argument('--data-dir', type=Path, default=DATA, help='Persistent App data directory')
     args = parser.parse_args()
     if (not args.region and not args.show and not args.ota_url and not args.draduck_wake

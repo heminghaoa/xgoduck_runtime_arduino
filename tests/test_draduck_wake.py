@@ -33,15 +33,20 @@ class DraduckWakeTest(unittest.TestCase):
         (self.models / 'draduck_short.onnx').write_bytes(b'onnx')
         self.assertEqual(wake_profile(custom)[0], 'ドラダック')        # main missing: short stands in
         (self.models / 'draduck_nee.onnx').write_bytes(b'onnx')
+        self.assertEqual(Path(wake_profile(custom)[1]['model_path']).name, 'draduck_nee.onnx')   # the first model stands in
+        (self.models / 'draduck_nee4.onnx').write_bytes(b'onnx')
         phrase, settings = wake_profile(custom)
         self.assertEqual(phrase, 'ねえ、ドラダック')
-        self.assertEqual(Path(settings['model_path']).name, 'draduck_nee.onnx')
+        self.assertEqual(Path(settings['model_path']).name, 'draduck_nee4.onnx')   # the default since 2026-11-25
+        self.assertEqual(settings['threshold'], .35)
+        self.settings.write_text(json.dumps({'wake': 'nee1'}))
+        self.assertEqual(Path(wake_profile(custom)[1]['model_path']).name, 'draduck_nee.onnx')
         self.assertEqual(settings['input_scale'], 1.)
         self.settings.write_text(json.dumps({'wake': 'short'}))
         self.assertEqual(wake_profile(custom)[0], 'ドラダック')
         self.assertEqual(wake_profile(custom)[1]['threshold'], .70)
         self.settings.write_text(json.dumps({'wake': 'strict'}))     # not installed: main stands in
-        self.assertEqual(Path(wake_profile(custom)[1]['model_path']).name, 'draduck_nee.onnx')
+        self.assertEqual(Path(wake_profile(custom)[1]['model_path']).name, 'draduck_nee4.onnx')
         (self.models / 'draduck_nee_strict.onnx').write_bytes(b'onnx')
         self.assertEqual(Path(wake_profile(custom)[1]['model_path']).name, 'draduck_nee_strict.onnx')
         self.settings.write_text('not json')
@@ -50,7 +55,8 @@ class DraduckWakeTest(unittest.TestCase):
     def test_installed_models_match_their_provenance(self):
         import hashlib
         for key, (phrase, model, threshold) in voice_config.DRADUCK_WAKE.items():
-            info = json.loads((ROOT / f'provenance/draduck-{key}-wakeword.json').read_text())
+            made = {'nee': 'nee4', 'nee1': 'nee'}.get(key, key)     # nee is the nee4 model; nee1 the first one
+            info = json.loads((ROOT / f'provenance/draduck-{made}-wakeword.json').read_text())
             path = ROOT / 'python/models' / model
             self.assertEqual(info['classifier']['path'], f'python/models/{model}')
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), info['classifier']['sha256'])

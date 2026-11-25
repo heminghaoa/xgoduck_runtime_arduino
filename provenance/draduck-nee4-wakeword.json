@@ -1,6 +1,6 @@
 {
   "wake_phrase": "ねえ、ドラダック",
-  "used_when": "data/draduck.json {\"wake\": \"nee4\"}; lab trial model of 2026-11-24, not installed on a duck yet, not the default",
+  "used_when": "voice_config ota_url is set (our own DRADUCK voice server): the default DRADUCK wake word since 2026-11-25 (owner: 「改用 nee4」), as \"nee\" and \"nee4\" in data/draduck.json. Lab duck, 2026-11-25, with the two-window and speech guards: 9 of the owner's 11 real calls woke it (the first model none), no false wake in 35 minutes of the room's microphone",
   "trainer": {
     "name": "livekit-wakeword",
     "commit": "95448a7559c453fcd87645bd67b247ffb45f85b0",
