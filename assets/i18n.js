@@ -1054,9 +1054,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   const body=document.querySelector('#bindingDialog .binding-body');
   if(!body||document.getElementById('draduckVoice'))return;
   const [title,intro,button]={
-    en:['DRADUCK voice (AI)','Talk with your duck in Japanese on the DRADUCK voice server. Add the duck to My Duck on the website; the next page gets the code from the duck for you.','Use voice (AI)'],
-    zh:['DRADUCK 语音（AI）','使用 DRADUCK 的语音服务器，用日语和鸭子对话。在网站的「マイダック」添加鸭子即可，代码由下一页从鸭子获取。','使用语音（AI）'],
-    ja:['DRADUCK の音声（AI）','DRADUCK の音声サーバーで、ダックと日本語で話せます。ウェブサイトのマイダックにダックを追加するだけで、コードは次の画面がダックから受け取ります。','音声（AI）を使う']}[lang];
+    en:['DRADUCK voice (AI)','Talk with your duck in Japanese on the DRADUCK voice server. Once the duck is assembled and calibrated, press the button and add it to My Duck on the website.','Use voice (AI)'],
+    zh:['DRADUCK 语音（AI）','使用 DRADUCK 的语音服务器，用日语和鸭子对话。组装和校准完成后，按下按钮，在网站的「マイダック」添加这只鸭子。','使用语音（AI）'],
+    ja:['DRADUCK の音声（AI）','DRADUCK の音声サーバーで、ダックと日本語で話せます。組み立てと校正が終わったら、ボタンを押して、ウェブサイトのマイダックにダックを追加してください。','音声（AI）を使う']}[lang];
   const style=document.createElement('style');
   style.textContent='.draduck-voice{margin:4px 0 18px;padding:16px;border:1px solid #2f6b55;border-radius:12px;background:#143028}'
     +'.draduck-voice h3{margin:0 0 6px;font-size:16px}.draduck-voice p{margin:0 0 12px;font-size:13px;line-height:1.65}'
