@@ -41,13 +41,69 @@ COOLDOWN_SEC = 1.5
 MAX_SCORING_AGE = .5
 
 
+class SpeechGate:
+    """Did somebody speak in the last two seconds? (DRADUCK, 2026-11-25)
+
+    A wake model can score high on the microphone's own noise: the lab duck woke three times in half an hour
+    with nobody speaking, on audio within 4 dB of the room's noise in every band. A spoken wake word stands
+    well over that noise for most of a second. So: the power between 300 and 3000 Hz of each 80 ms frame,
+    against the noise floor (a low percentile of the last 30 s), and a wake counts only when enough of the
+    last two seconds' frames stand `rise_db` over the floor. Levels are relative, so microphone gain and the
+    PCM scale don't matter. The floor outlives a restart of the listening thread."""
+    FRAME = 1280                # 80 ms at 16 kHz
+    WINDOW = 25                 # frames in the model's two seconds
+    FLOOR_FRAMES = 375          # 30 s
+    FLOOR_PERCENTILE = 20
+    LOW_HZ, HIGH_HZ = 300, 3000
+
+    def __init__(self, rise_db, frames):
+        if (isinstance(rise_db, bool) or not isinstance(rise_db, (int, float)) or not math.isfinite(rise_db)
+                or not 3 <= rise_db <= 30):
+            raise ValueError('speech rise_db must be 3–30')
+        if type(frames) is not int or not 1 <= frames <= self.WINDOW:
+            raise ValueError(f'speech frames must be 1–{self.WINDOW}')
+        self.ratio, self.frames = 10 ** (rise_db / 10), frames
+        freq = np.fft.rfftfreq(self.FRAME, 1 / SAMPLE_RATE)
+        self._band = (freq >= self.LOW_HZ) & (freq < self.HIGH_HZ)
+        self._hann = np.hanning(self.FRAME).astype(np.float32)
+        self._rest = np.zeros(0, dtype=np.float32)
+        self._floor = deque(maxlen=self.FLOOR_FRAMES)
+        self._recent = deque(maxlen=self.WINDOW)
+
+    def reset(self):
+        """The audio stream broke: the two seconds start again; the noise floor stays."""
+        self._rest = np.zeros(0, dtype=np.float32)
+        self._recent.clear()
+
+    def feed(self, audio):
+        audio = np.concatenate([self._rest, np.asarray(audio, dtype=np.float32).reshape(-1)])
+        whole = len(audio) - len(audio) % self.FRAME
+        for start in range(0, whole, self.FRAME):
+            spectrum = np.fft.rfft(audio[start:start + self.FRAME] * self._hann)
+            power = float((np.abs(spectrum[self._band]) ** 2).sum()) + 1e-12
+            self._floor.append(power)
+            self._recent.append(power)
+        self._rest = audio[whole:]
+
+    def loud_frames(self):
+        """How many of the last two seconds' frames stand over the noise floor."""
+        if len(self._floor) < self.WINDOW:
+            return 0
+        floor = float(np.percentile(self._floor, self.FLOOR_PERCENTILE))
+        return sum(power >= floor * self.ratio for power in self._recent)
+
+    def spoke(self):
+        return self.loud_frames() >= self.frames
+
+
 class WakeWordManager:
     """唤醒词检测管理器"""
 
     def __init__(self, on_wakeup=None, on_ready=None, model_path=None, threshold=None, device=None,
                  on_audio=None, input_transform=None, input_scale=None, stride_duration=None,
                  cooldown_sec=None, input_channels=1, input_latency=.32, shared_input=False,
-                 detection_context=None, *, threshold_for_context=None):
+                 detection_context=None, *, threshold_for_context=None, confirm_windows=1,
+                 speech_rise_db=None, speech_frames=4):
         """
         Args:
             on_wakeup: 检测到唤醒词后的回调
@@ -64,6 +120,10 @@ class WakeWordManager:
             detection_context: 可选。返回当前检测上下文，None 时只更新窗口。
                 启用时命中后继续监听，并把检测上下文传给回调。
             threshold_for_context: 可选。根据检测上下文和默认阈值返回本次阈值。
+            confirm_windows: 连续多少个推理窗口达到阈值才触发，默认 1（原行为）。
+                说出的唤醒词会让相邻窗口连续高分；背景噪声常只让单个窗口冲高。
+            speech_rise_db: 可选。启用人声能量门限 (SpeechGate)：最近 2 秒内至少 speech_frames 个
+                80ms 帧的 300–3000Hz 能量高出底噪这么多 dB 才允许触发。默认 None（不启用，原行为）。
         """
         self._on_wakeup = on_wakeup
         self._on_ready = on_ready
@@ -82,6 +142,10 @@ class WakeWordManager:
         self._shared_input = shared_input
         self._detection_context = detection_context
         self._threshold_for_context = threshold_for_context
+        if type(confirm_windows) is not int or not 1 <= confirm_windows <= 8:
+            raise ValueError('confirm_windows must be 1–8')
+        self._confirm_windows = confirm_windows
+        self._speech_gate = None if speech_rise_db is None else SpeechGate(speech_rise_db, speech_frames)
         self._feed_queue = None
         self._on_audio = on_audio
         self._input_transform = input_transform or (lambda samples: samples[:, 0] if samples.ndim == 2 else samples)
@@ -275,6 +339,9 @@ class WakeWordManager:
         stats = self._capture_stats
         sequence = 0
         last_trigger = -math.inf
+        over = over_peak = ignored = 0           # consecutive windows at or over the threshold; lone spikes dropped
+        gate = self._speech_gate
+        quiet_until = -math.inf                  # a high score with nobody speaking is logged once per cooldown
         peak_score = 0.0
         chunk_count = 0
         last_diag = time.time()
@@ -293,7 +360,8 @@ class WakeWordManager:
 
         try:
             print(
-                f"[WakeWord] 监听参数: threshold={self._threshold} "
+                f"[WakeWord] 监听参数: threshold={self._threshold} confirm_windows={self._confirm_windows} "
+                f"speech_gate={'off' if self._speech_gate is None else 'on'} "
                 f"sample_rate={SAMPLE_RATE} window={CLIP_DURATION:.1f}s "
                 f"stride={self._stride_duration:g}s input_scale={self._input_scale:g}",
                 flush=True,
@@ -332,6 +400,10 @@ class WakeWordManager:
                     if reset:
                         ring.fill(0)
                         filled_samples = 0
+                        if gate is not None:
+                            gate.reset()
+                    if gate is not None:
+                        gate.feed(new_audio)
                     if fresh and self._on_audio is not None:
                         try:
                             self._on_audio(new_audio)
@@ -360,6 +432,7 @@ class WakeWordManager:
                         continue
                     context = self._detection_context() if self._detection_context else None
                     if self._detection_context is not None and context is None:
+                        over = 0
                         continue
                     threshold = self._threshold
                     if context is not None and self._threshold_for_context is not None:
@@ -388,13 +461,38 @@ class WakeWordManager:
                         last_diag = now
 
                     triggered_at = time.monotonic()
-                    if score >= threshold and triggered_at - last_trigger >= self._cooldown_sec:
+                    if score >= threshold:
+                        over, over_peak = over + 1, max(score, over_peak if over else 0.)
+                    else:
+                        if 0 < over < self._confirm_windows and triggered_at - last_trigger >= self._cooldown_sec:
+                            ignored += 1
+                            print(
+                                f"[WakeWord] 忽略短暂高分: 连续{over}窗 < {self._confirm_windows} "
+                                f"peak={over_peak:.4f} threshold={threshold:.2f} 累计={ignored}",
+                                flush=True,
+                            )
+                        over = 0
+                    if over >= self._confirm_windows and triggered_at - last_trigger >= self._cooldown_sec:
                         if self._detection_context is not None and self._detection_context() != context:
+                            over = 0
+                            continue
+                        if gate is not None and not gate.spoke():
+                            # The model scored high, but nothing in the last two seconds stood over the noise.
+                            if triggered_at >= quiet_until:
+                                quiet_until = triggered_at + self._cooldown_sec
+                                ignored += 1
+                                print(
+                                    f"[WakeWord] 忽略无人声的高分: 置信度={max(score, over_peak):.4f} "
+                                    f"threshold={threshold:.2f} 高于底噪的帧={gate.loud_frames()}/{gate.frames} "
+                                    f"累计={ignored}",
+                                    flush=True,
+                                )
                             continue
                         last_trigger = triggered_at
+                        over = 0
                         print(
                             f"[WakeWord] 检测到唤醒词! "
-                            f"置信度={score:.4f} "
+                            f"置信度={max(score, over_peak):.4f} "
                             f"时间={time.strftime('%H:%M:%S')} threshold={threshold:.2f}",
                             flush=True,
                         )

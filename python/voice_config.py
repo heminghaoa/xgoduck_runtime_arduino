@@ -27,6 +27,18 @@ DRADUCK_WAKE = {
     # nee4: nee3 plus 「ねえ、…」 near-miss negatives; about half of nee3's false wakes on them in tests.
     'nee4': ('ねえ、ドラダック', 'draduck_nee4.onnx', .35),
 }
+# False wakes (owner 2026-11-25: the lab duck woke three times in half an hour with nobody speaking, twice
+# standing up; the recorded audio was its microphone's own noise at +12 dB, within 4 dB of the room's noise in
+# every band, and scored up to 0.73 on nee3 and 0.63 on nee). Every DRADUCK model therefore also needs, in
+# wakeword_manager.py: the score over the threshold in two windows in a row (a spoken wake word holds it for
+# several; half the noise spikes were one window), and speech: at least 3 of the last two seconds' 80 ms frames
+# 8 dB over the noise floor between 300 and 3000 Hz (SpeechGate). Replayed over 12.6 minutes of that room's
+# microphone: nee 1 false wake and nee3 3 before, none after (those windows had 0 to 2 such frames; the owner's
+# voice at about a metre had 15, peaking 20 dB over the floor). Synthetic wake phrases mixed into that noise:
+# the gate costs nothing from 10 dB over the noise up, 1 of 52 at 6 dB, 4 of 52 at 3 dB; 10 dB and 4 frames
+# cost 11 of 52 at 6 dB.
+DRADUCK_CONFIRM_WINDOWS = 2
+DRADUCK_SPEECH = (8, 3)         # (dB over the noise floor, frames)
 # The choice lives in its own file, not in voice_config.json: Luwu's app drops that whole file when
 # it meets a field it does not know, which would lose the cloud settings after a downgrade.
 DRADUCK_SETTINGS = DATA / 'draduck.json'
@@ -60,7 +72,9 @@ def wake_profile(config):
             phrase, model, threshold = DRADUCK_WAKE[key]
             if (WAKE_MODELS / model).is_file():
                 return phrase, dict(shared_capture=True, model_path=str(WAKE_MODELS / model),
-                                    threshold=threshold, input_scale=1., stride_duration=.08, cooldown_sec=2.)
+                                    threshold=threshold, input_scale=1., stride_duration=.08, cooldown_sec=2.,
+                                    confirm_windows=DRADUCK_CONFIRM_WINDOWS, speech_rise_db=DRADUCK_SPEECH[0],
+                                    speech_frames=DRADUCK_SPEECH[1])
     region = None if config.get('ota_url') else config.get('cloud_region')
     if region == 'global':
         phrase, model = 'Hey Ducky', 'hey_ducky.onnx'

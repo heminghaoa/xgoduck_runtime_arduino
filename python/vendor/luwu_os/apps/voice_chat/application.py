@@ -295,6 +295,9 @@ class Application:
             shared_input=self._shared_wake_capture,
             detection_context=self._wake_detection_context if self._wake_interrupt_enabled else None,
             threshold_for_context=threshold_for_context if playback_threshold is not None else None,
+            confirm_windows=ww_cfg.get('confirm_windows', 1),
+            speech_rise_db=ww_cfg.get('speech_rise_db'),
+            speech_frames=ww_cfg.get('speech_frames', 4),
         )
         if self.wakeword.is_available():
             self._resume_wakeword()
