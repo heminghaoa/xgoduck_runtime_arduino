@@ -142,7 +142,9 @@ class OfflineConnectionSoundTest(unittest.IsolatedAsyncioTestCase):
         for language in ('cn', 'en'):
             with self.subTest(language=language):
                 self.runtime.config.update({'language': language})
-                path = Path(__file__).resolve().parents[1] / 'python/assets' / f'bind-device-{language}.wav'
+                # DRADUCK: a duck that is not set to Chinese speaks Japanese.
+                spoken = 'cn' if language == 'cn' else 'ja'
+                path = Path(__file__).resolve().parents[1] / 'python/assets' / f'bind-device-{spoken}.wav'
                 with wave.open(str(path), 'rb') as wav:
                     self.assertEqual((wav.getnchannels(), wav.getsampwidth(), wav.getframerate()), (1, 2, 16000))
                     self.assertGreater(wav.getnframes(), 16000)
@@ -157,15 +159,16 @@ class OfflineConnectionSoundTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_binding_prompt_reads_the_current_ipv4_in_both_languages(self):
         self.runtime.onboarding.snapshot.return_value = {'ipv4': '192.168.31.20'}
-        bank = Path(__file__).resolve().parents[1] / 'python/assets/bind-ip-parts.zip'
+        assets = Path(__file__).resolve().parents[1] / 'python/assets'
         parts = ('1', '9', '2', 'dot', '1', '6', '8', 'dot', '3', '1', 'dot', '2', '0')
-        with ZipFile(bank) as clips:
-            for language in ('cn', 'en'):
+        # DRADUCK: a duck that is not set to Chinese speaks Japanese, from its own clip bank.
+        for language, bank, spoken in (('cn', 'bind-ip-parts.zip', 'cn'), ('en', 'bind-ip-parts-ja.zip', 'ja')):
+            with ZipFile(assets / bank) as clips:
                 with self.subTest(language=language):
                     self.runtime.config.update({'language': language})
-                    expected = bytes(5760).join((clips.read(f'{language}/prefix.pcm'),
-                        bytes(1440).join(clips.read(f'{language}/{part}.pcm') for part in parts),
-                        clips.read(f'{language}/suffix.pcm')))
+                    expected = bytes(5760).join((clips.read(f'{spoken}/prefix.pcm'),
+                        bytes(1440).join(clips.read(f'{spoken}/{part}.pcm') for part in parts),
+                        clips.read(f'{spoken}/suffix.pcm')))
                     with patch('voice_process.usb_audio_cards', return_value=self.cards), \
                          patch('voice_process.subprocess.run') as run:
                         self.assertTrue(await self.runtime.play_connection_sound('binding_required', 'speech', 1.))

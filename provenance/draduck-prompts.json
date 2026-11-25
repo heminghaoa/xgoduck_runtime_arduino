@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-25",
+  "source": "OpenAI speech synthesis",
+  "model": "gpt-4o-mini-tts",
+  "voice": "cedar",
+  "style": "日本語。小さなアヒルのロボットが、明るく、はっきり、ふつうの速さで話す。間を長く取らない。",
+  "generator": "tools/build-draduck-prompts.py",
+  "low_battery": {
+    "path": "python/assets/low-battery-ja.wav",
+    "text": "バッテリーが少なくなりました。電源を切って、充電してください。いまから力を抜きます。",
+    "format": "24 kHz mono PCM16",
+    "seconds": 7.35,
+    "sha256": "299f4d94b52d6553264be9693d6ba37c91a88bab1cb179ace701ab9612378d35"
+  },
+  "bind_device": {
+    "path": "python/assets/bind-device-ja.wav",
+    "text": "ブラウザでダックのコックピットを開いてください。",
+    "format": "16 kHz mono PCM16",
+    "sha256": "151a4aa44b3ea2e6c798801e52b61ccbae2916a7533af26deb2b1e7b9b18421c"
+  },
+  "address_parts": {
+    "path": "python/assets/bind-ip-parts-ja.zip",
+    "format": "16 kHz mono PCM16",
+    "text": "ブラウザで、［IP アドレス］を開いてください。",
+    "parts": {
+      "prefix": "ブラウザで、",
+      "suffix": "を開いてください。",
+      "dot": "てん",
+      "0": "ゼロ",
+      "1": "いち",
+      "2": "に",
+      "3": "さん",
+      "4": "よん",
+      "5": "ご",
+      "6": "ろく",
+      "7": "なな",
+      "8": "はち",
+      "9": "きゅう"
+    },
+    "sha256": "d3a2d6585f8494a87ad29a0fe6ed9e7dd83776766644f491c6116c15fa9febb4"
+  }
+}

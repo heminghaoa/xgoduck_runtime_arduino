@@ -373,7 +373,7 @@ class AudioHandoffTest(unittest.TestCase):
                     self.bench.play_battery_warning()
                     proc.wait.assert_called_once_with(timeout=9)
                     clip = Path(popen.call_args.args[0][-1])
-                    self.assertEqual(clip.name, f'low-battery-{language}.wav')
+                    self.assertEqual(clip.name, 'low-battery-cn.wav' if language == 'cn' else 'low-battery-ja.wav')  # DRADUCK
                     with wave.open(str(clip), 'rb') as audio:
                         self.assertEqual((audio.getnchannels(), audio.getsampwidth(), audio.getframerate()),
                                          (1, 2, 24000))

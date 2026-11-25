@@ -252,7 +252,7 @@
     "python/vendor/microduck_voice/__init__.py": "59e18e22c2c5da037ff0d2a8d06468c8f48dc514433fc67a23c117232465292c",
     "python/voice_application.py": "39f32836433e001f13252b7d4b1e2783a020ee9ee7696912a5aba8f7fa5dc856",
     "python/voice_config.py": "26390b182b5572db8606a44f4e08939a41a4f6f3bf884a33093d931bec6f1834",
-    "python/voice_media.py": "f4f937dec11dd1d5a1f62e1723ada7618482b25fb87bd6db6a2f06434288a466",
+    "python/voice_media.py": "fbfd11af5ea9e1a97aebd84c695a27159b47223a0bc5e2c8a1d5cd5662680ad3",
     "python/voice_process.py": "41ffbf002e35a382cb721944e84abdda359b4c74192697333bc33b29c1fb1a01",
     "python/voice_supervisor.py": "fe38af4572b30e11af3ce0fc0e1189cf6937b8422b96a338c6a6207761dc368c",
     "sketch/src/vl53l5cx/LICENSE.md": "ef6aa872e1cec61f008808bc061d047bfdd83cbcf3da59c232c8a65f70303f63",

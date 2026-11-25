@@ -119,6 +119,10 @@ class MediaBench(legacy.Bench):
                     if warning:
                         language = settings['language']
                         sources['low-battery'] = ROOT / f'python/assets/low-battery-{language}.wav'
+                        # DRADUCK: Japanese for every duck that is not set to Chinese (the maker has cn/en only).
+                        japanese = ROOT / 'python/assets/low-battery-ja.wav'
+                        if language != 'cn' and japanese.is_file():
+                            sources['low-battery'] = japanese
                     path = sources.get(source)
                     if source in DUCK_CALL_SOURCES:
                         rate = 24000

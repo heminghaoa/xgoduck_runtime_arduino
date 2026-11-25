@@ -9,7 +9,13 @@ BINDING_SAMPLE_RATE = 16000
 
 
 def binding_pcm(language, address):
-    language = 'cn' if language == 'cn' else 'en'
+    # DRADUCK: Japanese for every duck that is not set to Chinese (the maker has cn/en only); the clips come from
+    # tools/build-draduck-prompts.py.
+    parts = ASSETS / 'bind-ip-parts.zip'
+    if language != 'cn' and (ASSETS / 'bind-ip-parts-ja.zip').is_file() and (ASSETS / 'bind-device-ja.wav').is_file():
+        language, parts = 'ja', ASSETS / 'bind-ip-parts-ja.zip'
+    else:
+        language = 'cn' if language == 'cn' else 'en'
     if not address:
         # Also supports an older host service that predates the IPv4 field.
         with wave.open(str(ASSETS / f'bind-device-{language}.wav'), 'rb') as wav:
@@ -17,7 +23,7 @@ def binding_pcm(language, address):
 
     # Speak each digit so even a long address sounds unambiguous.
     ip = str(IPv4Address(address))
-    with ZipFile(ASSETS / 'bind-ip-parts.zip') as clips:
+    with ZipFile(parts) as clips:
         def read(part):
             return clips.read(f'{language}/{part}.pcm')
 
