@@ -1,6 +1,7 @@
 """BlueZ GATT peripheral for provisioning only; never accepts motion commands."""
 import asyncio
 import contextlib
+import json
 import threading
 from pathlib import Path
 from dbus_next import BusType, DBusError
@@ -142,9 +143,26 @@ class Write(Characteristic):
             raise DBusError('org.bluez.Error.InvalidValueLength', 'Invalid BluFi packet.')
 
 
+# DRADUCK: one Bluetooth name for the duck. duck-connect (draduck_companion) advertises "DRADUCK " + the last four
+# characters of the duck ID in this file; Luwu's name here ("XGO-Duck" + the MAC's last four) also became the
+# adapter's alias, so a phone could show either, with two different endings (owner, 2026-11-26: 「为什么叫 xgduck
+# 啊不是应该叫 DRADUCK 吗」). Without the file (Luwu's own setup, or before duck-connect first ran): Luwu's name.
+DRADUCK_IDENTITY = Path('/var/lib/draduck/identity.json')
+
+
+def device_name(identity, draduck=None):
+    try:
+        duck_id = json.loads(Path(draduck or DRADUCK_IDENTITY).read_text())['id']
+        if isinstance(duck_id, str) and len(duck_id) >= 4 and duck_id.isascii() and duck_id.isalnum():
+            return 'DRADUCK ' + duck_id[-4:].upper()
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return 'XGO-Duck' + identity_bytes(identity).hex()[-4:].upper()
+
+
 class Peripheral:
     def __init__(self, identity, wifi, emit):
-        self.name = 'XGO-Duck' + identity_bytes(identity).hex()[-4:].upper()
+        self.name = device_name(identity)
         self.identity, self.wifi, self.emit = identity, wifi, emit
         self.serial_number = read_board_serial_number()
         self.bus = self.adapter = self.session = None
@@ -157,6 +175,7 @@ class Peripheral:
         return bool(self.session and (self.session.busy or self.session.notifying))
 
     async def start(self):
+        self.name = device_name(self.identity)      # the DRADUCK identity may have come since (first setup)
         try:
             async with asyncio.timeout(8):
                 self.bus = MessageBus(bus_type=BusType.SYSTEM)

@@ -137,3 +137,19 @@ class GattRoundTripTest(unittest.IsolatedAsyncioTestCase):
                     await close_bus(bus)
             daemon.terminate()
             await daemon.wait()
+
+
+class DraduckNameTest(unittest.TestCase):
+    """Owner 2026-11-26: a DRADUCK showed up on the phone as XGO-Duck612F. With a DRADUCK identity on the board the
+    BluFi service carries duck-connect's name; without one, Luwu's."""
+    def test_the_draduck_identity_names_the_board_and_luwus_name_stays_without_it(self):
+        import json
+        import tempfile
+        import blufi
+        identity = Path(tempfile.mkdtemp()) / 'identity.json'
+        self.assertEqual(blufi.device_name('02:12:34:56:AB:CD', identity), 'XGO-DuckABCD')
+        identity.write_text(json.dumps({'version': 1, 'id': '3836389F', 'key': 'k'}))
+        self.assertEqual(blufi.device_name('02:12:34:56:AB:CD', identity), 'DRADUCK 389F')
+        for bad in ('not json', '{"id": 7}', '{"id": "ab"}', '{"id": "38 6389F"}', '[]'):
+            identity.write_text(bad)
+            self.assertEqual(blufi.device_name('02:12:34:56:AB:CD', identity), 'XGO-DuckABCD')
