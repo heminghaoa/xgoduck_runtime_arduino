@@ -12,6 +12,19 @@
 >
 > Planned work, in Chinese: [docs/fork-roadmap.md](docs/fork-roadmap.md).
 
+> [!WARNING]
+> **Never power the duck on while it is charging.**
+>
+> - **Turn the power switch OFF before you plug in the charger**, and keep it OFF until charging is finished and the charger is unplugged.
+> - **Do not switch the duck on, run the app or move the duck with the charger plugged in.** The battery or the boards can be damaged, and the duck may no longer power on.
+> - This applies during servo setup and calibration too. Power on only from a charged battery, after unplugging the charger.
+>
+> **充電中は、電源を入れないでください。** 充電器をつなぐ前に電源スイッチを切り、充電が終わって充電器を外すまで切ったままにします。充電器をつないだまま電源を入れたり動かしたりすると、バッテリーやボードが壊れて、電源が入らなくなることがあります。
+>
+> **充电时请勿开机。** 插上充电器前先关闭电源开关，充电结束并拔下充电器之前保持关闭。插着充电器开机或让小鸭运动，可能损坏电池或主板，导致无法开机。
+>
+> The board maker gives the same rule: [charging safety (PCBA README)](https://github.com/LuwuDynamics/xgoduck_hardware/blob/master/PCBA/README.md).
+
 Control an XGO Duck from a web browser using Arduino Uno Q. Includes walking, roller walking, get-up, pick, and roulade policies.
 
 Based on [Microduck](https://github.com/pollen-robotics/microduck) by [Pollen Robotics](https://pollen-robotics.com/microduck/).
@@ -100,6 +113,8 @@ Leaving the Control page stops travel but keeps motor torque enabled. Use **Torq
 
 - Below **7.0 V** a yellow reminder asks you to charge soon.
 - Below **6.6 V** a red reminder asks you to turn torque off and charge now.
+
+To charge, turn torque off, switch the power OFF, then plug in the charger. Keep the power OFF while charging, and switch it on again only after unplugging the charger.
 
 The voltage dips while the servos work, so the level reads lower during walking than at rest. **No servo reading** means no servo answered: check that the power switch is on.
 
